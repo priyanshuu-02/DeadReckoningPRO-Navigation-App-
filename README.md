@@ -2,18 +2,8 @@
 
 *A GPS-free navigation app for Android (BETA) that uses pedestrian dead reckoning (PDR) to track your position when GPS is unavailable. Built with Android, OSMDroid, and sensor fusion algorithms.*
 
-*Created with AI assistance*
 
 ---
-
-## 📷 Screenshots
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/c7cc0cca-6442-4a0f-8756-489710d3d809" width="250" />
-  <img src="https://github.com/user-attachments/assets/820db7ab-47c6-4e31-b60d-fb4459e32c40" width="250" />
-  <img src="https://github.com/user-attachments/assets/4151b176-e890-4369-a4de-6925e7cf746d" width="250" />
-
-</p>
 
 ## ✨ New Features (v2.0)
 
