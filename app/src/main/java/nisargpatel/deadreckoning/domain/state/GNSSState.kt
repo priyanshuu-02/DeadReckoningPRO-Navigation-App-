@@ -1,7 +1,7 @@
 package nisargpatel.deadreckoning.domain.state
 
 data class GNSSState(
-    val isAvailable: Boolean = true,
+    val isAvailable: Boolean = false,
     val satelliteCount: Int = 0,
     val accuracyMeters: Double = 0.0,
     val latitude: Double = 0.0,

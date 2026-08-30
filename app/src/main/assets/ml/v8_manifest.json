@@ -1,0 +1,18 @@
+{
+  "model": "V8 state-conditioned heading-delta",
+  "input": {
+    "imu": [
+      20,
+      6
+    ],
+    "sample_rate_hz": 10,
+    "initial_speed": "normalized m/s"
+  },
+  "outputs": [
+    "speed",
+    "position",
+    "heading_delta",
+    "motion_logits"
+  ],
+  "checkpoint_epoch": 0
+}

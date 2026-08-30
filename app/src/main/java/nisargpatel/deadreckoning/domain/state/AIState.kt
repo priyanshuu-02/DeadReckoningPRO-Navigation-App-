@@ -9,5 +9,5 @@ data class AIState(
     val motionConfidencePercentage: Int = 0,
     val anomalyDetected: String = "None",
     val inferenceTimeMs: Long = 0L,
-    val modelVersion: String = "v1.0-mock"
+    val modelVersion: String = "Not loaded"
 )

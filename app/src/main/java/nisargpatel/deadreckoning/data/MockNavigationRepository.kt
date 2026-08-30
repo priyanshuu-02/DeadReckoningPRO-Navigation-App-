@@ -1,8 +1,11 @@
 package nisargpatel.deadreckoning.data
 
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import nisargpatel.deadreckoning.adapter.SensorAdapter
+import nisargpatel.deadreckoning.adapter.PotholeDetector
 import nisargpatel.deadreckoning.adapter.TripDataAdapter
 import nisargpatel.deadreckoning.domain.model.NavigationMode
 import nisargpatel.deadreckoning.domain.repository.NavigationRepository
@@ -18,6 +21,9 @@ class MockNavigationRepository(
     private val context: Context,
     private val externalScope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 ) : NavigationRepository {
+    companion object {
+        private const val TAG = "MockNavigationRepository"
+    }
 
     private val tripAdapter = TripDataAdapter(context)
 
@@ -46,13 +52,36 @@ class MockNavigationRepository(
     private val _sessionState = MutableStateFlow(SessionState(sessions = tripAdapter.getSessions()))
     override val sessionState: StateFlow<SessionState> = _sessionState.asStateFlow()
 
-    // SharedFlow for transient events
-    private val _navigationEvents = MutableSharedFlow<NavigationEvent>(replay = 0)
+    // SharedFlow for transient events (replay=1 keeps the last event so subscribers don't miss pothole alerts)
+    private val _navigationEvents = MutableSharedFlow<NavigationEvent>(replay = 1)
     override val navigationEvents: SharedFlow<NavigationEvent> = _navigationEvents.asSharedFlow()
 
     private var autoPlayJob: Job? = null
     private var outageTimerJob: Job? = null
+    private var sensorListenerJob: Job? = null
     private var outageSeconds: Long = 0L
+    private val potholeDetector = PotholeDetector()
+    private var lastPotholeAt: Long = 0L
+    private val sensorAdapter = SensorAdapter(context)
+
+    init {
+        // Wire up sensor data to pothole detector
+        sensorListenerJob = externalScope.launch {
+            sensorAdapter.sensorState.collect { sensorState ->
+                processSensorSample(
+                    sensorState.accelX,
+                    sensorState.accelY,
+                    sensorState.accelZ,
+                    sensorState.gyroX,
+                    sensorState.gyroY,
+                    sensorState.gyroZ
+                )
+            }
+        }
+        // Start listening to sensor events
+        sensorAdapter.startListening()
+        Log.i(TAG, "SensorAdapter initialized and listening to real sensor data")
+    }
 
     override fun startNavigation() {
         _navigationState.value = _navigationState.value.copy(
@@ -124,19 +153,31 @@ class MockNavigationRepository(
     }
 
     override fun simulatePothole() {
-        _aiState.value = _aiState.value.copy(
-            motionClassification = "POTHOLE DETECTED",
-            motionConfidencePercentage = 96,
-            anomalyDetected = "Pothole / Road Anomaly"
-        )
-        _sensorState.value = _sensorState.value.copy(
-            mountStabilityPercentage = 84,
-            alignmentConfidencePercentage = 88
-        )
-        _navigationState.value = _navigationState.value.copy(
-            confidencePercentage = 82
-        )
-        emitEvent(NavigationEvent.PotholeDetected(severity = "Moderate Pothole (0.12g shock)"))
+        // Pothole simulation is now only triggered by actual sensor detection flow
+        Log.d(TAG, "Manual pothole simulation called - no-op (use sensor-based detection instead)")
+    }
+
+    fun processSensorSample(
+        accelX: Float,
+        accelY: Float,
+        accelZ: Float,
+        gyroX: Float,
+        gyroY: Float,
+        gyroZ: Float
+    ) {
+        val detection = potholeDetector.update(accelX, accelY, accelZ, gyroX, gyroY, gyroZ)
+        if (detection.detected && System.currentTimeMillis() - lastPotholeAt > 2500L) {
+            lastPotholeAt = System.currentTimeMillis()
+            Log.i(TAG, "PotholeDetected event emitted | severity=${detection.severity} | confidence=${detection.confidence}%")
+            triggerPotholeEvent("${detection.severity} Pothole (${detection.confidence}% confidence)", detection.confidence)
+        }
+    }
+
+    private fun triggerPotholeEvent(severity: String, confidence: Int) {
+        Log.d(TAG, "triggerPotholeEvent called | severity=$severity | confidence=$confidence")
+        // Only emit the transient event, do NOT permanently modify anomalyDetected state
+        // The Intelligence screen will handle the transient display via LaunchedEffect
+        emitEvent(NavigationEvent.PotholeDetected(severity = severity))
     }
 
     override fun simulateRecovery() {
@@ -211,11 +252,7 @@ class MockNavigationRepository(
                 simulateOutage()
                 delay(8000L)
 
-                // 3. POTHOLE EVENT (14-18s)
-                simulatePothole()
-                delay(4000L)
-
-                // 4. GNSS RECOVERY (18-22s)
+                // 3. RECOVERY (14-18s) - pothole detection is now sensor-based only
                 simulateRecovery()
                 delay(4000L)
             }

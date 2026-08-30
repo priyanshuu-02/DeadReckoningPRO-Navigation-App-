@@ -62,12 +62,9 @@ fun DeadReckoningScreen(
             border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "INITIAL GNSS LOCK POSITION", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text(text = "16.5062, 80.6480", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = "CURRENT ESTIMATED POSITION (DR)", color = PrimaryBlue, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(text = "CURRENT ESTIMATED POSITION", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    text = "${String.format("%.4f", navState.latitude)}, ${String.format("%.4f", navState.longitude)}",
+                    text = if (navState.latitude == 0.0 && navState.longitude == 0.0) "Awaiting location" else "${String.format("%.4f", navState.latitude)}, ${String.format("%.4f", navState.longitude)}",
                     color = PrimaryBlue,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp

@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
-import nisargpatel.deadreckoning.data.MockNavigationRepository
+import nisargpatel.deadreckoning.data.LiveNavigationRepository
 import nisargpatel.deadreckoning.domain.state.NavigationSession
 import nisargpatel.deadreckoning.ui.screens.*
 import nisargpatel.deadreckoning.ui.theme.*
@@ -47,7 +47,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
 @Composable
 fun IDRAppShell() {
     val context = LocalContext.current
-    val repository = remember { MockNavigationRepository(context) }
+    val repository = remember { LiveNavigationRepository(context.applicationContext) }
 
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
