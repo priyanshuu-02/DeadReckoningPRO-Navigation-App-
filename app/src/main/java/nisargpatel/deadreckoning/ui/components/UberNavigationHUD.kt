@@ -32,6 +32,8 @@ fun UberNavigationHUD(
     onRecenterMap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val hasRoute = routeInfo.routePoints.size > 1
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -97,7 +99,7 @@ fun UberNavigationHUD(
                 Column {
                     Text(text = "ESTIMATED ETA", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
                     Text(
-                        text = "${routeInfo.estimatedTimeMinutes} min",
+                        text = if (hasRoute) "${routeInfo.estimatedTimeMinutes} min" else "--",
                         color = UberMintGreen,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Black
@@ -107,7 +109,7 @@ fun UberNavigationHUD(
                 Column {
                     Text(text = "DISTANCE", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
                     Text(
-                        text = "${routeInfo.totalDistanceKm} km",
+                        text = if (hasRoute) String.format("%.1f km", routeInfo.totalDistanceKm) else "--",
                         color = TextPrimary,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Black

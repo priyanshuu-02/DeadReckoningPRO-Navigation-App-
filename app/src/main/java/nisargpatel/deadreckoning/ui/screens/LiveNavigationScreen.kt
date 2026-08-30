@@ -14,7 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import kotlinx.coroutines.delay
 import nisargpatel.deadreckoning.domain.model.NavigationMode
+import nisargpatel.deadreckoning.domain.state.NavigationEvent
 import nisargpatel.deadreckoning.ui.components.*
 import nisargpatel.deadreckoning.ui.theme.*
 import nisargpatel.deadreckoning.ui.viewmodel.NavigationViewModel
@@ -36,9 +38,20 @@ fun LiveNavigationScreen(
 ) {
     val navState by viewModel.navigationState.collectAsState()
     val routeInfo by viewModel.selectedRoute.collectAsState()
+    var potholeAlert by remember { mutableStateOf<String?>(null) }
 
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(viewModel.events) {
+        viewModel.events.collect { event ->
+            if (event is NavigationEvent.PotholeDetected) {
+                potholeAlert = event.severity
+                delay(4_000L)
+                potholeAlert = null
+            }
+        }
+    }
 
     // Bind OSMDroid MapView lifecycle to active Compose lifecycle
     DisposableEffect(lifecycleOwner, mapViewRef) {
@@ -137,21 +150,15 @@ fun LiveNavigationScreen(
                 }
                 targetPolyline.setPoints(routeInfo.routePoints)
 
-                // 1B. Current Vehicle Location
-                val currentPos = if (navState.latitude != 0.0 || navState.longitude != 0.0) {
-                    GeoPoint(navState.latitude, navState.longitude)
-                } else {
-                    routeInfo.sourcePoint
+                if (navState.latitude != 0.0 || navState.longitude != 0.0) {
+                    val currentPos = GeoPoint(navState.latitude, navState.longitude)
+                    UberVehicleMarker.updateVehicleMarker(
+                        mapView = mapView,
+                        position = currentPos,
+                        headingDegrees = navState.headingDegrees
+                    )
+                    mapView.controller.animateTo(currentPos)
                 }
-
-                // 1C. Sleek Top-Down Rotating Vehicle Car Marker
-                UberVehicleMarker.updateVehicleMarker(
-                    mapView = mapView,
-                    position = currentPos,
-                    headingDegrees = navState.headingDegrees
-                )
-
-                mapView.controller.animateTo(currentPos)
                 mapView.invalidate()
             },
             modifier = Modifier.fillMaxSize()
@@ -188,6 +195,22 @@ fun LiveNavigationScreen(
                     viewModel.selectDestination(name, point)
                 }
             )
+
+            potholeAlert?.let { alert ->
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = WarningAmber.copy(alpha = 0.94f),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
+                ) {
+                    Text(
+                        text = alert,
+                        color = UberBlack,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                }
+            }
         }
 
         // 3. Bottom Uber Turn-by-Turn Navigation HUD Card
@@ -207,12 +230,8 @@ fun LiveNavigationScreen(
                 }
             },
             onRecenterMap = {
-                mapViewRef?.let { map ->
-                    val pos = if (navState.latitude != 0.0 || navState.longitude != 0.0) {
-                        GeoPoint(navState.latitude, navState.longitude)
-                    } else {
-                        routeInfo.sourcePoint
-                    }
+                if (navState.latitude != 0.0 || navState.longitude != 0.0) mapViewRef?.let { map ->
+                    val pos = GeoPoint(navState.latitude, navState.longitude)
                     Log.i(TAG, "Recentering map on position: $pos")
                     map.controller.animateTo(pos)
                     map.controller.setZoom(18.5)

@@ -33,6 +33,11 @@ android {
     buildFeatures {
         compose true
     }
+    packaging {
+        resources {
+            excludes += 'osmosis-plugins.conf'
+        }
+    }
     composeOptions {
         kotlinCompilerExtensionVersion "1.5.14"
     }
@@ -63,6 +68,11 @@ dependencies {
     // OpenStreetMap - osmdroid
     implementation 'org.osmdroid:osmdroid-android:6.1.18'
 
+    // Offline OSM PBF reader for regional road-package imports
+    implementation('org.openstreetmap.osmosis:osmosis-pbf2:0.48.3') {
+        exclude group: 'org.springframework', module: 'spring-jdbc'
+    }
+
     // Gson
     implementation 'com.google.code.gson:gson:2.10.1'
 
@@ -74,4 +84,8 @@ dependencies {
 
     // Unit testing
     testImplementation 'junit:junit:4.13.2'
+}
+
+configurations.configureEach {
+    exclude group: 'com.google.guava', module: 'listenablefuture'
 }

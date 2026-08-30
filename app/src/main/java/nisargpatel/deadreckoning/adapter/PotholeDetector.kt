@@ -11,20 +11,23 @@ data class PotholeDetectionResult(
     val confidence: Int
 )
 
+/**
+ * A mount-aware, multi-sample impact detector. Its baseline adapts only while the
+ * device is quiet, so a vehicle's normal vibration is not confused with an impact.
+ */
 class PotholeDetector {
     companion object {
         private const val TAG = "PotholeDetector"
+        private const val GRAVITY = 9.81f
         private const val WINDOW_SIZE = 5
-        private const val MIN_SHOCK_SCORE = 10.5f
-        private const val MIN_VIBRATION_SCORE = 6.0f
-        private const val SINGLE_SAMPLE_SHOCK = 18.0f
-        private const val SINGLE_SAMPLE_VIBRATION = 10.5f
+        private const val REQUIRED_IMPACT_SAMPLES = 3
     }
 
-    private val accelWindow = ArrayDeque<Float>()
-    private val gyroWindow = ArrayDeque<Float>()
-    private val shockWindow = ArrayDeque<Float>()
-    private val vibrationWindow = ArrayDeque<Float>()
+    private val impactWindow = ArrayDeque<Float>()
+    private val rotationWindow = ArrayDeque<Float>()
+    private var accelerationBaseline = 0f
+    private var rotationBaseline = 0f
+    private var baselineSamples = 0
 
     fun update(
         accelX: Float,
@@ -34,116 +37,72 @@ class PotholeDetector {
         gyroY: Float,
         gyroZ: Float
     ): PotholeDetectionResult {
-        val accelMagnitude = sqrt((accelX * accelX) + (accelY * accelY) + (accelZ * accelZ).toDouble()).toFloat()
-        val gyroMagnitude = sqrt((gyroX * gyroX) + (gyroY * gyroY) + (gyroZ * gyroZ).toDouble()).toFloat()
+        val accelerationMagnitude = magnitude(accelX, accelY, accelZ)
+        val rotationMagnitude = magnitude(gyroX, gyroY, gyroZ)
+        val gravityDelta = abs(accelerationMagnitude - GRAVITY)
 
-        accelWindow.addLast(accelMagnitude)
-        gyroWindow.addLast(gyroMagnitude)
-        shockWindow.addLast(abs(accelMagnitude - 9.8f))
-        vibrationWindow.addLast(abs(gyroMagnitude - 0.25f))
+        updateBaseline(gravityDelta, rotationMagnitude)
+        val impact = abs(gravityDelta - accelerationBaseline)
+        val rotation = abs(rotationMagnitude - rotationBaseline)
+        impactWindow.addLast(impact)
+        rotationWindow.addLast(rotation)
+        while (impactWindow.size > WINDOW_SIZE) impactWindow.removeFirst()
+        while (rotationWindow.size > WINDOW_SIZE) rotationWindow.removeFirst()
 
-        while (accelWindow.size > 10) accelWindow.removeFirst()
-        while (gyroWindow.size > 10) gyroWindow.removeFirst()
-        while (shockWindow.size > WINDOW_SIZE) shockWindow.removeFirst()
-        while (vibrationWindow.size > WINDOW_SIZE) vibrationWindow.removeFirst()
+        val impactThreshold = maxOf(3.5f, accelerationBaseline * 4f + 1.2f)
+        val rotationThreshold = maxOf(0.8f, rotationBaseline * 4f + 0.35f)
+        val impactSamples = impactWindow.count { it >= impactThreshold }
+        val rotationSamples = rotationWindow.count { it >= rotationThreshold }
+        val averageImpact = impactWindow.average().toFloat()
+        val peakImpact = impactWindow.maxOrNull() ?: 0f
+        val averageRotation = rotationWindow.average().toFloat()
 
-        val meanAccel = accelWindow.average().toFloat()
-        val meanGyro = gyroWindow.average().toFloat()
-        val accelVariance = accelWindow.map { val diff = it - meanAccel; diff * diff }.average()
-        val gyroVariance = gyroWindow.map { val diff = it - meanGyro; diff * diff }.average()
-        val accelStd = sqrt(accelVariance).toFloat()
-        val gyroStd = sqrt(gyroVariance).toFloat()
+        val detected = impactWindow.size >= REQUIRED_IMPACT_SAMPLES &&
+            impactSamples >= REQUIRED_IMPACT_SAMPLES &&
+            rotationSamples >= 2 &&
+            averageImpact >= impactThreshold * 0.8f &&
+            averageRotation >= rotationThreshold * 0.7f
 
-        val accelDelta = abs(accelMagnitude - 9.8f)
-        val gyroDelta = abs(gyroMagnitude - 0.25f)
-        val shockScore = accelDelta + (accelStd * 2.5f)
-        val vibrationScore = (gyroStd * 3.1f) + (gyroDelta * 2.2f)
-
-        val avgShock = shockWindow.average().toFloat()
-        val avgVibration = vibrationWindow.average().toFloat()
-        val hasStrongImpact = accelDelta > 4.5f || accelMagnitude > 14.5f || accelMagnitude < 6.2f
-        val hasStrongRotation = gyroMagnitude > 2.2f || avgVibration > MIN_VIBRATION_SCORE
-
-        val strongImpactSamples = shockWindow.count { it > 4.5f }
-        val strongRotationSamples = vibrationWindow.count { it > 2.0f }
-        val severeImpactSamples = shockWindow.count { it > 6.5f }
-
-        val multiSampleHit = shockWindow.size >= 3 &&
-            strongImpactSamples >= 3 &&
-            strongRotationSamples >= 3 &&
-            avgShock > 5.5f &&
-            avgVibration > 2.4f
-        val singleHit = shockScore > SINGLE_SAMPLE_SHOCK && vibrationScore > SINGLE_SAMPLE_VIBRATION
-        val isPothole = hasStrongImpact && hasStrongRotation && (singleHit || multiSampleHit)
-        val severeCluster = multiSampleHit &&
-            severeImpactSamples >= 2 &&
-            avgShock > 6.3f &&
-            avgVibration > 2.8f
+        if (!detected) return PotholeDetectionResult(false, "None", 0)
 
         val severity = when {
-            !isPothole -> "None"
-            severeCluster -> "Severe"
-            shockScore > 15.0f || vibrationScore > 8.8f -> "Moderate"
-            shockScore > MIN_SHOCK_SCORE && vibrationScore > MIN_VIBRATION_SCORE -> "Minor"
+            impactSamples >= 4 && peakImpact >= impactThreshold * 2.6f && averageImpact >= impactThreshold * 1.8f -> "Severe"
+            peakImpact >= impactThreshold * 1.8f || averageImpact >= impactThreshold * 1.25f -> "Moderate"
             else -> "Minor"
         }
-
-        val confidence = calculateConfidence(
-            severity = severity,
-            shockScore = shockScore,
-            vibrationScore = vibrationScore,
-            avgShock = avgShock,
-            avgVibration = avgVibration,
-            strongImpactSamples = strongImpactSamples,
-            strongRotationSamples = strongRotationSamples
+        val confidence = confidence(
+            averageImpact / impactThreshold,
+            peakImpact / impactThreshold,
+            averageRotation / rotationThreshold,
+            impactSamples
         )
-
-        if (isPothole) {
-            try {
-                Log.i(TAG, "Pothole detected | severity=$severity | confidence=$confidence% | shock=${String.format("%.2f", shockScore)} | vibration=${String.format("%.2f", vibrationScore)} | timestamp=${System.currentTimeMillis()}")
-            } catch (e: Exception) {
-                // Logging may not be available in unit tests
-            }
+        try {
+            Log.i(TAG, "Pothole detected: $severity ($confidence%), impact=$peakImpact, samples=$impactSamples")
+        } catch (_: RuntimeException) {
+            // android.util.Log is unavailable in local JVM unit tests.
         }
-
-        return PotholeDetectionResult(
-            detected = isPothole,
-            severity = severity,
-            confidence = confidence
-        )
+        return PotholeDetectionResult(true, severity, confidence)
     }
 
-    private fun calculateConfidence(
-        severity: String,
-        shockScore: Float,
-        vibrationScore: Float,
-        avgShock: Float,
-        avgVibration: Float,
-        strongImpactSamples: Int,
-        strongRotationSamples: Int
-    ): Int {
-        if (severity == "None") return 0
-
-        val shockStrength = ((shockScore - MIN_SHOCK_SCORE) / 24f).coerceIn(0f, 1f)
-        val vibrationStrength = ((vibrationScore - MIN_VIBRATION_SCORE) / 18f).coerceIn(0f, 1f)
-        val avgShockStrength = ((avgShock - 5.5f) / 14f).coerceIn(0f, 1f)
-        val avgVibrationStrength = ((avgVibration - 2.4f) / 10f).coerceIn(0f, 1f)
-        val sampleStrength = ((strongImpactSamples + strongRotationSamples - 4) / 6f).coerceIn(0f, 1f)
-
-        val confidenceStrength =
-            (shockStrength * 0.32f) +
-            (vibrationStrength * 0.28f) +
-            (avgShockStrength * 0.18f) +
-            (avgVibrationStrength * 0.12f) +
-            (sampleStrength * 0.10f)
-
-        val range = when (severity) {
-            "Severe" -> 93..99
-            "Moderate" -> 78..92
-            else -> 60..77
+    private fun updateBaseline(gravityDelta: Float, rotationMagnitude: Float) {
+        if (gravityDelta > 1.2f || rotationMagnitude > 0.5f) return
+        if (baselineSamples == 0) {
+            accelerationBaseline = gravityDelta
+            rotationBaseline = rotationMagnitude
+        } else {
+            accelerationBaseline += (gravityDelta - accelerationBaseline) * 0.04f
+            rotationBaseline += (rotationMagnitude - rotationBaseline) * 0.04f
         }
-
-        return (range.first + (confidenceStrength * (range.last - range.first))).roundToInt()
-            .coerceIn(range.first, range.last)
+        baselineSamples++
     }
+
+    private fun confidence(impactRatio: Float, peakRatio: Float, rotationRatio: Float, samples: Int): Int {
+        val strength = ((impactRatio - 0.8f) * 0.32f + (peakRatio - 1f) * 0.25f +
+            (rotationRatio - 0.7f) * 0.07f + (samples - REQUIRED_IMPACT_SAMPLES) * 0.1f)
+            .coerceIn(0f, 1f)
+        return (58 + strength * 40).roundToInt()
+    }
+
+    private fun magnitude(x: Float, y: Float, z: Float): Float =
+        sqrt(x * x + y * y + z * z)
 }

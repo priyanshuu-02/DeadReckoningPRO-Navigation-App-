@@ -26,12 +26,12 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
     object Calibration : Screen("calibration", "Calibration")
 
     // 6 Primary Bottom Nav Destinations
-    object Home : Screen("home", "Home", Icons.Default.Home)
-    object Navigation : Screen("navigation", "Nav", Icons.Default.Navigation)
-    object Intelligence : Screen("intelligence", "AI", Icons.Default.Psychology)
-    object Analytics : Screen("analytics", "Analytics", Icons.Default.Analytics)
-    object Sessions : Screen("sessions", "Sessions", Icons.Default.History)
-    object Settings : Screen("settings", "Settings", Icons.Default.Settings)
+    object Home : Screen("home", "Status", Icons.Default.Dashboard)
+    object Navigation : Screen("navigation", "Drive", Icons.Default.Navigation)
+    object Intelligence : Screen("intelligence", "Models", Icons.Default.Psychology)
+    object Analytics : Screen("analytics", "Metrics", Icons.Default.Analytics)
+    object Sessions : Screen("sessions", "Trips", Icons.Default.History)
+    object Settings : Screen("settings", "Systems", Icons.Default.Tune)
 
     // Technical Secondary Screens
     object Sensors : Screen("sensors", "Sensors")
@@ -71,8 +71,8 @@ fun IDRAppShell() {
             bottomBar = {
                 if (showBottomBar) {
                     NavigationBar(
-                        containerColor = AutomotiveDarkBg,
-                        tonalElevation = 8.dp
+                        containerColor = AutomotiveSurfaceBg,
+                        tonalElevation = 0.dp
                     ) {
                         bottomNavItems.forEach { screen ->
                             val selected = currentRoute == screen.route
@@ -83,7 +83,7 @@ fun IDRAppShell() {
                                 colors = NavigationBarItemDefaults.colors(
                                     selectedIconColor = PrimaryBlue,
                                     selectedTextColor = PrimaryBlue,
-                                    indicatorColor = PrimaryBlue.copy(alpha = 0.2f),
+                                    indicatorColor = PrimaryBlue.copy(alpha = 0.14f),
                                     unselectedIconColor = TextSecondary,
                                     unselectedTextColor = TextSecondary
                                 ),
@@ -117,7 +117,8 @@ fun IDRAppShell() {
                     PermissionScreen(onContinue = { navController.navigate(Screen.Calibration.route) { popUpTo(Screen.Permission.route) { inclusive = true } } })
                 }
                 composable(Screen.Calibration.route) {
-                    CalibrationScreen(onStartNavigation = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Calibration.route) { inclusive = true } } })
+                    val viewModel = viewModel<NavigationViewModel> { NavigationViewModel(repository) }
+                    CalibrationScreen(viewModel = viewModel, onStartNavigation = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Calibration.route) { inclusive = true } } })
                 }
 
                 // 6 Main Screens with Screen-Specific ViewModels
@@ -172,7 +173,9 @@ fun IDRAppShell() {
                     TrajectoryScreen(viewModel = viewModel)
                 }
                 composable(Screen.OfflineMaps.route) {
-                    OfflineMapsScreen()
+                    val viewModel = viewModel<NavigationViewModel> { NavigationViewModel(repository) }
+                    val mapState by viewModel.mapState.collectAsState()
+                    OfflineMapsScreen(currentPosition = mapState.currentPosition)
                 }
                 composable(Screen.SessionDetail.route) {
                     selectedDetailSession?.let { session ->

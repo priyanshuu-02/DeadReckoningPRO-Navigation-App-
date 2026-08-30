@@ -2,6 +2,8 @@ package nisargpatel.deadreckoning.domain.repository
 
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import nisargpatel.deadreckoning.domain.model.RouteInfo
+import org.osmdroid.util.GeoPoint
 import nisargpatel.deadreckoning.domain.state.*
 
 interface NavigationRepository {
@@ -17,15 +19,8 @@ interface NavigationRepository {
 
     fun startNavigation()
     fun stopNavigation()
+    fun startGnssMonitoring()
+    fun setActiveRoute(route: RouteInfo)
+    suspend fun findOfflineRoute(start: GeoPoint, end: GeoPoint, destinationName: String): RouteInfo?
 
-    // Simulation & Demo Controls
-    fun simulateModeGNSSActive()
-    fun simulateOutage()
-    fun simulatePothole()
-    fun simulateRecovery()
-    fun simulateOffline()
-    fun simulateError()
-    fun resetDemo()
-    fun startAutoPlay()
-    fun stopAutoPlay()
 }

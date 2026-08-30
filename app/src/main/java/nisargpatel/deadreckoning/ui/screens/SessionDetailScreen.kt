@@ -17,7 +17,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import nisargpatel.deadreckoning.domain.state.NavigationSession
+import nisargpatel.deadreckoning.ui.components.CommandPanel
+import nisargpatel.deadreckoning.ui.components.DataRow
+import nisargpatel.deadreckoning.ui.components.DividerLine
 import nisargpatel.deadreckoning.ui.components.MetricCard
+import nisargpatel.deadreckoning.ui.components.SectionLabel
 import nisargpatel.deadreckoning.ui.theme.*
 
 @Composable
@@ -38,7 +42,7 @@ fun SessionDetailScreen(
             }
             Spacer(modifier = Modifier.width(4.dp))
             Column {
-                Text(text = "SESSION DETAIL", color = PrimaryBlue, fontWeight = FontWeight.Black, fontSize = 18.sp, letterSpacing = 1.sp)
+                Text(text = "Trip Detail", color = PrimaryBlue, fontWeight = FontWeight.Black, fontSize = 21.sp)
                 Text(text = session.dateString, color = TextSecondary, fontSize = 12.sp)
             }
         }
@@ -91,14 +95,24 @@ fun SessionDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(140.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(8.dp),
             color = AutomotiveCardBg,
             border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(imageVector = Icons.Default.Map, contentDescription = "Session Map", tint = PrimaryBlue.copy(alpha = 0.3f), modifier = Modifier.size(56.dp))
-                Text(text = "SESSION TRAJECTORY MAP VIEW", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(text = "Trip trajectory preview", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        CommandPanel(color = RoadInk, borderColor = DividerSoft) {
+            SectionLabel("Error summary")
+            DataRow("Max error", "${session.maxErrorMeters} m", WarningAmber)
+            DividerLine()
+            DataRow("Average error", "${session.avgErrorMeters} m")
+            DataRow("Status", session.status, SuccessGreen)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -112,21 +126,21 @@ fun SessionDetailScreen(
                 onClick = { },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(8.dp)
             ) {
                 Icon(imageVector = Icons.Default.Download, contentDescription = "Export GPX", modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(text = "EXPORT GPX", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text(text = "Export GPX", fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
 
             OutlinedButton(
                 onClick = { },
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(8.dp)
             ) {
                 Icon(imageVector = Icons.Default.Download, contentDescription = "Export CSV", modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(text = "EXPORT CSV", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text(text = "Export CSV", fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
         }
     }

@@ -4,6 +4,7 @@ import argparse
 import json
 import shutil
 import sys
+import hashlib
 from pathlib import Path
 
 import torch
@@ -74,6 +75,8 @@ def main():
         dynamo=False,
     )
     shutil.copy2(candidate_dir / "normalization.json", args.output / "v8_normalization.json")
+    report = json.loads((candidate_dir / "test_results.json").read_text(encoding="utf-8"))
+    onnx_hash = hashlib.sha256((args.output / "v8_dead_reckoning.onnx").read_bytes()).hexdigest()
     (args.output / "v8_manifest.json").write_text(
         json.dumps(
             {
@@ -81,6 +84,15 @@ def main():
                 "input": {"imu": [20, 6], "sample_rate_hz": 10, "initial_speed": "normalized m/s"},
                 "outputs": ["speed", "position", "heading_delta", "motion_logits"],
                 "checkpoint_epoch": checkpoint["epoch"],
+                "sha256": onnx_hash,
+                "selection": "validation only; held-out test never used for selection",
+                "held_out_test": {
+                    "speed_mae_mps": report["speed_mae_mps"],
+                    "position_rmse_m": report["position_rmse_m"],
+                    "motion_accuracy": report["motion_accuracy"],
+                    "trajectory_final_error_m": {horizon: values["mean_final_position_error_m"] for horizon, values in report["trajectory"].items()},
+                },
+                "deployment_status": "experimental: benchmark acceptance must be decided from held-out trajectory results",
             },
             indent=2,
         ),

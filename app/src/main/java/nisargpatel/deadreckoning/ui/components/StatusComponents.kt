@@ -1,7 +1,6 @@
 package nisargpatel.deadreckoning.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,7 +35,7 @@ fun ModeIndicator(
     }
 
     Surface(
-        modifier = modifier.shadow(4.dp, shape = CircleShape),
+        modifier = modifier.shadow(1.dp, shape = CircleShape),
         shape = CircleShape,
         color = color.copy(alpha = 0.15f),
         border = androidx.compose.foundation.BorderStroke(1.5.dp, color)
@@ -56,8 +55,7 @@ fun ModeIndicator(
                 text = text,
                 color = color,
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 13.sp,
-                letterSpacing = 0.5.sp
+                fontSize = 12.sp
             )
         }
     }
@@ -68,7 +66,7 @@ fun DemoModeIndicator(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.shadow(2.dp, shape = CircleShape),
+        modifier = modifier.shadow(1.dp, shape = CircleShape),
         shape = CircleShape,
         color = WarningAmber.copy(alpha = 0.18f),
         border = androidx.compose.foundation.BorderStroke(1.5.dp, WarningAmber)
@@ -87,8 +85,7 @@ fun DemoModeIndicator(
                 text = "DEMO MODE",
                 color = WarningAmber,
                 fontWeight = FontWeight.Bold,
-                fontSize = 11.sp,
-                letterSpacing = 0.5.sp
+                fontSize = 11.sp
             )
         }
     }
@@ -102,8 +99,8 @@ fun OutageBanner(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(8.dp, shape = RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
+            .shadow(2.dp, shape = RoundedCornerShape(8.dp)),
+        shape = RoundedCornerShape(8.dp),
         color = Color.Unspecified,
         border = androidx.compose.foundation.BorderStroke(1.5.dp, ErrorRed)
     ) {
@@ -112,8 +109,8 @@ fun OutageBanner(
                 .background(
                     brush = Brush.horizontalGradient(
                         colors = listOf(
-                            ErrorRed.copy(alpha = 0.95f),
-                            Color(0xFF991B1B)
+                            ErrorRed.copy(alpha = 0.92f),
+                            Color(0xFF7F1D1D)
                         )
                     )
                 )
@@ -131,11 +128,10 @@ fun OutageBanner(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "⚠ GNSS SIGNAL LOST",
+                        text = "GNSS SIGNAL LOST",
                         color = Color.White,
                         fontWeight = FontWeight.Black,
-                        fontSize = 15.sp,
-                        letterSpacing = 0.5.sp
+                        fontSize = 15.sp
                     )
                     Text(
                         text = "AI Dead Reckoning Active • Outage Duration: ${outageSeconds}s",
