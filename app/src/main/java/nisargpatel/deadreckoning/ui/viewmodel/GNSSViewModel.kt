@@ -10,7 +10,4 @@ class GNSSViewModel(
 ) : ViewModel() {
 
     val gnssState: StateFlow<GNSSState> = repository.gnssState
-
-    fun simulateOutage() = repository.simulateOutage()
-    fun simulateGNSSActive() = repository.simulateModeGNSSActive()
 }

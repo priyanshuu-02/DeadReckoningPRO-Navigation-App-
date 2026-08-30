@@ -19,6 +19,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import nisargpatel.deadreckoning.domain.state.NavigationSession
+import nisargpatel.deadreckoning.ui.components.CommandPanel
+import nisargpatel.deadreckoning.ui.components.PageHeader
+import nisargpatel.deadreckoning.ui.components.SectionLabel
+import nisargpatel.deadreckoning.ui.components.StatusPill
 import nisargpatel.deadreckoning.ui.theme.*
 import nisargpatel.deadreckoning.ui.viewmodel.SessionsViewModel
 
@@ -35,20 +39,20 @@ fun SessionsScreen(
             .background(AutomotiveDarkBg)
             .padding(16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(imageVector = Icons.Default.History, contentDescription = "Sessions", tint = PrimaryBlue, modifier = Modifier.size(28.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-                Text(text = "NAVIGATION SESSIONS", color = PrimaryBlue, fontWeight = FontWeight.Black, fontSize = 18.sp, letterSpacing = 1.sp)
-                Text(text = "Recorded Vehicle Trips & Dead Reckoning Telemetry", color = TextSecondary, fontSize = 12.sp)
-            }
-        }
+        PageHeader(
+            title = "Trip Archive",
+            subtitle = "Recorded routes and dead reckoning telemetry",
+            icon = Icons.Default.History
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         if (sessionState.sessions.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = "No saved navigation sessions found.", color = TextSecondary)
+                CommandPanel {
+                    SectionLabel("No trips yet")
+                    Text(text = "Start navigation to save a trip session.", color = TextSecondary, fontSize = 13.sp)
+                }
             }
         } else {
             LazyColumn(
@@ -69,7 +73,7 @@ private fun SessionCardItem(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(8.dp),
         color = AutomotiveCardBg,
         border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder),
         modifier = Modifier.fillMaxWidth()
@@ -86,6 +90,8 @@ private fun SessionCardItem(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(text = "Max Error: ${session.maxErrorMeters}m • Avg Error: ${session.avgErrorMeters}m", color = WarningAmber, fontSize = 11.sp)
             }
+            StatusPill(text = session.status, color = SuccessGreen)
+            Spacer(modifier = Modifier.width(8.dp))
             Icon(imageVector = Icons.Default.ChevronRight, contentDescription = "Details", tint = TextSecondary)
         }
     }

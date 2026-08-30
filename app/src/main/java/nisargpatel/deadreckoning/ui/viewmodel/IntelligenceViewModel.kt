@@ -63,8 +63,4 @@ class IntelligenceViewModel(
             _potholeAlert.value = null
         }
     }
-
-    fun simulatePothole() {
-        repository.simulatePothole()
-    }
 }

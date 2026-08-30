@@ -56,6 +56,7 @@ class V8DeadReckoningEngine(context: Context) : AutoCloseable {
     private val environment = OrtEnvironment.getEnvironment()
     private val session: OrtSession
     private val normalization: V8Normalization
+    val manifest: V8ModelManifest = ModelArtifactValidator.validate(context)
     private val window = ArrayDeque<FloatArray>(WINDOW_SIZE)
     private val rawWindow = ArrayDeque<FloatArray>(WINDOW_SIZE)
     private var lastAcceptedTimestampNs = 0L
@@ -67,7 +68,7 @@ class V8DeadReckoningEngine(context: Context) : AutoCloseable {
             Gson().fromJson(it, V8Normalization::class.java)
         }
         session = environment.createSession(model, OrtSession.SessionOptions())
-        Log.i(TAG, "Loaded V8 ONNX model with a 20 x 6 IMU input window")
+        Log.i(TAG, "Loaded ${manifest.model}; ${manifest.deployment_status}")
     }
 
     fun addSample(

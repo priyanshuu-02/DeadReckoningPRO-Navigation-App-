@@ -29,6 +29,7 @@ fun TrajectoryScreen(
     var showGNSS by remember { mutableStateOf(true) }
     var showDR by remember { mutableStateOf(true) }
     var showMatched by remember { mutableStateOf(true) }
+    val mapState by viewModel.mapState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -86,54 +87,33 @@ fun TrajectoryScreen(
             color = AutomotiveDarkBg,
             border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
         ) {
-            Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                val width = size.width
-                val height = size.height
-
-                // Draw Grid Background
-                val gridSpacing = 40f
-                for (x in 0..(width / gridSpacing).toInt()) {
-                    drawLine(color = AutomotiveCardBorder.copy(alpha = 0.3f), start = Offset(x * gridSpacing, 0f), end = Offset(x * gridSpacing, height), strokeWidth = 1f)
+            if (mapState.gnssTrajectory.size + mapState.drTrajectory.size + mapState.matchedTrajectory.size < 2) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Trajectory data appears after navigation begins.", color = TextSecondary, fontSize = 12.sp)
                 }
-                for (y in 0..(height / gridSpacing).toInt()) {
-                    drawLine(color = AutomotiveCardBorder.copy(alpha = 0.3f), start = Offset(0f, y * gridSpacing), end = Offset(width, y * gridSpacing), strokeWidth = 1f)
-                }
-
-                // 1. GNSS Trajectory (Green)
-                if (showGNSS) {
-                    val pathGNSS = Path().apply {
-                        moveTo(20f, height - 30f)
-                        lineTo(width * 0.25f, height * 0.7f)
-                        lineTo(width * 0.4f, height * 0.65f)
-                        // Gap during outage
-                        moveTo(width * 0.75f, height * 0.25f)
-                        lineTo(width - 20f, 30f)
+            } else {
+                Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    val allPoints = mapState.gnssTrajectory + mapState.drTrajectory + mapState.matchedTrajectory
+                    val minLat = allPoints.minOf { it.latitude }
+                    val maxLat = allPoints.maxOf { it.latitude }
+                    val minLon = allPoints.minOf { it.longitude }
+                    val maxLon = allPoints.maxOf { it.longitude }
+                    fun pointFor(point: org.osmdroid.util.GeoPoint): Offset {
+                        val x = if (maxLon == minLon) size.width / 2f else ((point.longitude - minLon) / (maxLon - minLon) * size.width).toFloat()
+                        val y = if (maxLat == minLat) size.height / 2f else (size.height - (point.latitude - minLat) / (maxLat - minLat) * size.height).toFloat()
+                        return Offset(x, y)
                     }
-                    drawPath(path = pathGNSS, color = SuccessGreen, style = Stroke(width = 6f))
-                }
-
-                // 2. Raw DR Trajectory (Red - showing drift during outage)
-                if (showDR) {
-                    val pathDR = Path().apply {
-                        moveTo(20f, height - 30f)
-                        lineTo(width * 0.25f, height * 0.7f)
-                        lineTo(width * 0.45f, height * 0.55f)
-                        lineTo(width * 0.7f, height * 0.35f)
-                        lineTo(width - 20f, 30f)
+                    fun drawTrajectory(points: List<org.osmdroid.util.GeoPoint>, color: Color, width: Float) {
+                        if (points.size < 2) return
+                        val path = Path().apply {
+                            moveTo(pointFor(points.first()).x, pointFor(points.first()).y)
+                            points.drop(1).forEach { lineTo(pointFor(it).x, pointFor(it).y) }
+                        }
+                        drawPath(path, color, style = Stroke(width = width))
                     }
-                    drawPath(path = pathDR, color = ErrorRed, style = Stroke(width = 4f))
-                }
-
-                // 3. Map Matched Trajectory (Blue - road network constraint)
-                if (showMatched) {
-                    val pathMatched = Path().apply {
-                        moveTo(20f, height - 30f)
-                        lineTo(width * 0.25f, height * 0.7f)
-                        lineTo(width * 0.42f, height * 0.6f)
-                        lineTo(width * 0.72f, height * 0.28f)
-                        lineTo(width - 20f, 30f)
-                    }
-                    drawPath(path = pathMatched, color = PrimaryBlue, style = Stroke(width = 6f))
+                    if (showGNSS) drawTrajectory(mapState.gnssTrajectory, SuccessGreen, 5f)
+                    if (showDR) drawTrajectory(mapState.drTrajectory, ErrorRed, 4f)
+                    if (showMatched) drawTrajectory(mapState.matchedTrajectory, PrimaryBlue, 5f)
                 }
             }
         }
@@ -147,11 +127,11 @@ fun TrajectoryScreen(
             border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
-                Text(text = "SIH JUDGE DEMONSTRATION SUMMARY", color = WarningAmber, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text(text = "LIVE TRAJECTORY LEGEND", color = WarningAmber, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "• Green: True GNSS lock before/after tunnel outage.", color = TextSecondary, fontSize = 11.sp)
-                Text(text = "• Red: Raw dead reckoning path displaying unconstrained drift.", color = TextSecondary, fontSize = 11.sp)
-                Text(text = "• Blue: Fused AI + INS + Map-Matched vehicle trajectory.", color = TextSecondary, fontSize = 11.sp)
+                Text(text = "Green: received GNSS positions.", color = TextSecondary, fontSize = 11.sp)
+                Text(text = "Red: raw V8 dead-reckoning estimates.", color = TextSecondary, fontSize = 11.sp)
+                Text(text = "Blue: estimates projected onto the active route geometry.", color = TextSecondary, fontSize = 11.sp)
             }
         }
     }

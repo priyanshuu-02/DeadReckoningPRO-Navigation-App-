@@ -1,11 +1,6 @@
 package nisargpatel.deadreckoning.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Psychology
@@ -16,11 +11,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import nisargpatel.deadreckoning.ui.components.CommandPanel
+import nisargpatel.deadreckoning.ui.components.CommandScreen
+import nisargpatel.deadreckoning.ui.components.DataRow
+import nisargpatel.deadreckoning.ui.components.DividerLine
+import nisargpatel.deadreckoning.ui.components.PageHeader
+import nisargpatel.deadreckoning.ui.components.SectionLabel
+import nisargpatel.deadreckoning.ui.components.StatusPill
 import nisargpatel.deadreckoning.ui.components.AIStatusCard
 import nisargpatel.deadreckoning.ui.components.MetricCard
 import nisargpatel.deadreckoning.ui.theme.*
@@ -33,34 +33,26 @@ fun IntelligenceScreen(
     val aiState by viewModel.aiState.collectAsState()
     val potholeAlert by viewModel.potholeAlert.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AutomotiveDarkBg)
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(imageVector = Icons.Default.Psychology, contentDescription = "AI", tint = PurpleAI, modifier = Modifier.size(28.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-                Text(text = "ON-DEVICE AI INTELLIGENCE", color = PurpleAI, fontWeight = FontWeight.Black, fontSize = 18.sp, letterSpacing = 1.sp)
-                Text(text = "Real-Time IMU Speed & Motion Inference Engine", color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+    CommandScreen {
+        PageHeader(
+            title = "Model Intelligence",
+            subtitle = "Local V8 inference and road-impact monitoring",
+            icon = Icons.Default.Psychology,
+            tint = PurpleAI,
+            trailing = {
+                StatusPill(
+                    text = if (aiState.isModelLoaded) "Loaded" else "Offline",
+                    color = if (aiState.isModelLoaded) SuccessGreen else ErrorRed
+                )
             }
-        }
+        )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Main AI Status Header Card
         AIStatusCard(
             predictedSpeedKmh = aiState.predictedSpeedKmh,
             motionClassification = aiState.motionClassification,
             inferenceTimeMs = aiState.inferenceTimeMs
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Detailed Metrics Grid
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -83,75 +75,29 @@ fun IntelligenceScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Anomaly Detection Card - driven by live potholeAlert event
         val alertText = potholeAlert ?: aiState.anomalyDetected
         val isAlert = potholeAlert != null || aiState.anomalyDetected != "None"
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(4.dp, shape = RoundedCornerShape(16.dp)),
-            shape = RoundedCornerShape(16.dp),
-            color = AutomotiveCardBg,
-            border = androidx.compose.foundation.BorderStroke(1.dp, if (isAlert) WarningAmber else AutomotiveCardBorder)
-        ) {
+        CommandPanel(borderColor = if (isAlert) WarningAmber else AutomotiveCardBorder) {
             Row(
-                modifier = Modifier.padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(imageVector = Icons.Default.Warning, contentDescription = "Anomaly", tint = WarningAmber, modifier = Modifier.size(24.dp))
+                Icon(imageVector = Icons.Default.Warning, contentDescription = "Anomaly", tint = if (isAlert) WarningAmber else TextMuted, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "ANOMALY DETECTION", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                    SectionLabel("Road impact detector")
                     Text(text = alertText, color = TextPrimary, fontWeight = FontWeight.Black, fontSize = 15.sp)
                 }
-                Button(
-                    onClick = { viewModel.simulatePothole() },
-                    colors = ButtonDefaults.buttonColors(containerColor = WarningAmber),
-                    shape = CircleShape,
-                    modifier = Modifier.shadow(4.dp, shape = CircleShape),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(text = "TEST POTHOLE", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                }
+                StatusPill(text = if (isAlert) "Alert" else "Clear", color = if (isAlert) WarningAmber else SuccessGreen)
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // On-Device Model Information Card (Integrating ONNX Runtime details)
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(4.dp, shape = RoundedCornerShape(16.dp)),
-            shape = RoundedCornerShape(16.dp),
-            color = AutomotiveCardBg,
-            border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "ON-DEVICE ML MODEL STATUS", color = PrimaryBlue, fontWeight = FontWeight.Black, fontSize = 13.sp, letterSpacing = 0.5.sp)
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = "Model Architecture", color = TextSecondary, fontSize = 12.sp)
-                    Text(text = aiState.modelVersion, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = "Inference Engine", color = TextSecondary, fontSize = 12.sp)
-                    Text(text = "ONNX Runtime", color = if (aiState.isModelLoaded) SuccessGreen else ErrorRed, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = "Execution Target", color = TextSecondary, fontSize = 12.sp)
-                    Text(text = if (aiState.isModelLoaded) "On-Device NPU / CPU" else "Unavailable", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = "Model Version", color = TextSecondary, fontSize = 12.sp)
-                    Text(text = aiState.modelVersion, color = PurpleAI, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                }
-            }
+        CommandPanel(color = RoadInk, borderColor = DividerSoft) {
+            SectionLabel("Model artifact")
+            DataRow("Architecture", aiState.modelVersion)
+            DividerLine()
+            DataRow("Inference engine", "ONNX Runtime", if (aiState.isModelLoaded) SuccessGreen else ErrorRed)
+            DataRow("Execution target", if (aiState.isModelLoaded) "Device CPU / NNAPI fallback" else "Unavailable")
+            DataRow("Model version", aiState.modelVersion, PurpleAI)
         }
     }
 }

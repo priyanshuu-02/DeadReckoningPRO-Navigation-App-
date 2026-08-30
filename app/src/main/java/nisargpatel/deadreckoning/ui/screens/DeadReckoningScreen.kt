@@ -1,10 +1,6 @@
 package nisargpatel.deadreckoning.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CompassCalibration
 import androidx.compose.material.icons.filled.DirectionsCar
@@ -19,7 +15,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import nisargpatel.deadreckoning.ui.components.ConfidenceIndicator
+import nisargpatel.deadreckoning.ui.components.CommandPanel
+import nisargpatel.deadreckoning.ui.components.CommandScreen
 import nisargpatel.deadreckoning.ui.components.MetricCard
+import nisargpatel.deadreckoning.ui.components.PageHeader
+import nisargpatel.deadreckoning.ui.components.SectionLabel
 import nisargpatel.deadreckoning.ui.theme.*
 import nisargpatel.deadreckoning.ui.viewmodel.NavigationViewModel
 
@@ -29,52 +29,25 @@ fun DeadReckoningScreen(
 ) {
     val navState by viewModel.navigationState.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AutomotiveDarkBg)
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(imageVector = Icons.Default.DirectionsCar, contentDescription = "DR", tint = WarningAmber, modifier = Modifier.size(28.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(text = "DEAD RECKONING ENGINE", color = WarningAmber, fontWeight = FontWeight.Black, fontSize = 18.sp, letterSpacing = 1.sp)
-                    Text(text = "Vehicle INS Position Estimation", color = TextSecondary, fontSize = 12.sp)
-                }
-            }
-            ConfidenceIndicator(percentage = navState.confidencePercentage)
+    CommandScreen {
+        PageHeader(
+            title = "Dead Reckoning",
+            subtitle = "Vehicle INS position estimate during GNSS stress",
+            icon = Icons.Default.DirectionsCar,
+            tint = WarningAmber,
+            trailing = { ConfidenceIndicator(percentage = navState.confidencePercentage) }
+        )
+
+        CommandPanel {
+            SectionLabel("Current estimated position")
+            Text(
+                text = if (navState.latitude == 0.0 && navState.longitude == 0.0) "Awaiting location" else "${String.format("%.4f", navState.latitude)}, ${String.format("%.4f", navState.longitude)}",
+                color = PrimaryBlue,
+                fontWeight = FontWeight.Black,
+                fontSize = 20.sp
+            )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Initial GNSS & Estimated DR Position Card
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            color = AutomotiveCardBg,
-            border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "CURRENT ESTIMATED POSITION", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    text = if (navState.latitude == 0.0 && navState.longitude == 0.0) "Awaiting location" else "${String.format("%.4f", navState.latitude)}, ${String.format("%.4f", navState.longitude)}",
-                    color = PrimaryBlue,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Speed & Heading
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -95,9 +68,6 @@ fun DeadReckoningScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // DR Duration & Position Drift
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -117,25 +87,14 @@ fun DeadReckoningScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Dead Reckoning Algorithm Description Note
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            color = AutomotiveCardBg,
-            border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Text(text = "VEHICLE DEAD RECKONING MODEL", color = PrimaryBlue, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "x_new = x_old + (v_ai × Δt) × sin(heading)\ny_new = y_old + (v_ai × Δt) × cos(heading)",
-                    color = TextSecondary,
-                    fontSize = 12.sp,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                )
-            }
+        CommandPanel(color = RoadInk, borderColor = DividerSoft) {
+            SectionLabel("Estimator")
+            Text(
+                text = "EKF state is advanced by IMU samples, V8 speed inference, heading correction, and map-matched road continuity.",
+                color = TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

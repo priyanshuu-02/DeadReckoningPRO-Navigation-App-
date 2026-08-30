@@ -1,346 +1,166 @@
-# Dead Reckoning Pro
+# Dead Reckoning Pro Navigation
 
-*A GPS-free navigation app for Android (BETA) that uses pedestrian dead reckoning (PDR) to track your position when GPS is unavailable. Built with Android, OSMDroid, and sensor fusion algorithms.*
+An Android vehicle-navigation research app that combines fused GNSS, phone IMU data, and an on-device V8 inertial model. It is designed to keep producing a short-horizon position estimate during a GNSS outage, while showing live navigation and road-impact telemetry.
 
+> This is a research prototype, not a safety-critical navigation system. GNSS remains the trusted source when it is available; inertial estimates accumulate error during longer outages.
 
----
+## What It Does
 
-## ✨ New Features (v2.0)
+- Reads live accelerometer, gyroscope, magnetometer, and fused-location data from the phone.
+- Shows the current location on an OpenStreetMap/OSMDroid map with a heading-aware position marker.
+- Uses GNSS as the primary navigation source and calibration anchor.
+- Runs the bundled V8 dead-reckoning model locally during GNSS loss.
+- Detects strong road impacts with a conservative multi-sample pothole detector.
+- Shows live IMU, GNSS, AI, navigation, diagnostics, and session screens through a Jetpack Compose UI.
 
-### 🗺️ Map Markers
-- **Add custom markers** with emoji icons and labels
-- **18 emoji options**: 📍 📌 🏠 🏢 🍔 🍕 ☕ 🛒 🛑 ⛽ 🏨 🏞 🚗 ✈️ ⭐ ❤️ 🔴 🟢
-- **Persistent storage**: Markers are saved and restored between sessions
-- **Drag to move**: Long-press and drag markers to reposition
+## Navigation Pipeline
 
-### 🔄 360° Map Rotation
-- **Two-finger rotation**: Rotate the map like Google Maps
-- **Intuitive gesture**: Place two fingers and rotate
-- **Better navigation**: Align map with your direction of travel
+```text
+Phone sensors -> SensorAdapter -> PotholeDetector -> alert/event stream
+                   |
+                   +-------------> V8 ONNX model -> speed, displacement,
+                                                   heading delta, motion class
 
-### 🗑️ Smart Clear Options
-- Clear tracks only
-- Clear markers only  
-- Clear everything
-- Confirmation dialog to prevent accidents
-
----
-
-## Features
-
-### Core Navigation
-- **GPS Tracking**: Accurate GPS positioning when available
-- **Dead Reckoning**: Continue tracking when GPS signal is lost
-- **Step Counting**: Automatic step detection using accelerometer
-- **Heading Estimation**: Sensor fusion of gyroscope + magnetometer for accurate direction
-- **Manual Mode**: Manual direction control (turn left/right/around)
-- **360° Dial**: Visual compass dial for selecting direction in manual mode
-
-### Data Management
-- **Trip History**: Save and view past trips
-- **GPX Export**: Export trips in GPX format for use in other apps
-- **CSV Export**: Export trip data including all path points
-- **Custom Export Location**: Choose where to save exported files
-
-### Background Tracking
-- **Foreground Service**: Tracking continues when app is in background
-- **Screen Off Support**: Sensors continue collecting data when screen is off
-- **Wake Lock**: Prevents device from sleeping during active tracking
-- **Switch Apps**: Continue tracking while using other apps
-
-### Calibration
-- **GPS Calibration**: Automatic calibration using GPS data to correct drift
-- **Magnetometer Calibration**: Built-in compass calibration
-- **Step Calibration**: Calibrate step length for accurate distance
-
----
-
-### Bugs and things to fix 🐛 :
-
-Major improvements:
-- No offline maps or offline map manager.
-- Improved compass mode in "no GPS" mode.
-
-Minor improvements:
-- In "no GPS" mode, the route no longer follows GPS data.
-- Added the project URL to the "About" menu.
-- Fixed the GPS status display in the main view.
-
-
----
-## How It Works
-
-### Dead Reckoning Algorithm
-
-The app uses **Pedestrian Dead Reckoning (PDR)** to estimate position:
-
-1. **Step Detection**: Uses accelerometer to detect pedestrian steps via peak detection
-2. **Heading Estimation**: Combines gyroscope (short-term accuracy) + magnetometer (long-term stability) using a complementary filter
-3. **Position Update**: `New Position = Previous Position + Step Length × Heading Vector`
-
-```
-x_new = x_old + step_length × sin(heading)
-y_new = y_old + step_length × cos(heading)
+Fused location -> LocationAdapter -> GNSS navigation state and map position
+                                          |
+GNSS unavailable + V8 prediction --------+
+                  +--------------> short-horizon dead-reckoning position
 ```
 
-### GPS Calibration
+`LiveNavigationRepository` is the active runtime data source. It owns the live sensor, GNSS, V8 inference, map, and pothole event flow.
 
-When GPS is available, the app continuously calibrates:
-- **Scale Factor**: Ratio of GPS distance to estimated distance
-- **Heading Bias**: Difference between compass heading and actual GPS bearing
+## V8 On-Device Model
 
-This correction is applied when GPS is unavailable, significantly improving accuracy.
+The app ships a reviewed V8 ONNX model and its training normalization data in `app/src/main/assets/ml/`.
 
----
+### Current V8 Evidence Gate
 
-## Installation
+The bundled V8 candidate was selected on validation only and evaluated on a held-out IO-VNBD split. Its held-out report records 0.748 m/s speed MAE, 1.851 m position RMSE per window, and 81.1% motion accuracy. It does **not** currently meet the SIH trajectory-drift objective: mean final position error is 24.8 m at 10 seconds and 373.0 m at 60 seconds. The runtime therefore labels it experimental and verifies its SHA-256 and I/O contract before loading. A retrained candidate must update `v8_manifest.json` from the generated held-out report before deployment.
 
-### Prerequisites
-- Android Studio (Arctic Fox or later recommended)
-- Java JDK 11 or later
-- Android SDK with API 22+ (minimum), API 34 (target)
+| Item | Value |
+| --- | --- |
+| Runtime | ONNX Runtime for Android |
+| Input | 20 samples x 6 IMU channels |
+| Sample rate | 10 Hz |
+| Window duration | 2 seconds |
+| Outputs | speed, forward/lateral displacement, heading delta, motion logits |
+| Motion classes | stationary, driving straight, turning |
+| Runtime behavior | Uses GNSS speed as the trusted seed; uses V8 predictions when GNSS is stale |
 
-### Build Steps
+The model is intentionally not used as the sole long-distance position source. Its held-out evaluation shows drift that rises during long GNSS outages, so the app returns to GNSS as soon as a fresh fix is available.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/SaturnXIII/Dead-Reckoning-Pro
-   cd DeadReckoning
-   ```
+### Exporting the Model
 
-2. **Open in Android Studio**
-   - File → Open → Select the project folder
-   - Wait for Gradle sync to complete
+The included model assets were generated with:
 
-3. **Configure SDK**
-   - Go to File → Project Structure → SDK Location
-   - Ensure Android SDK is configured
-
-4. **Build Debug APK**
-   - Build → Build Bundle(s) / APK(s) → Build APK(s)
-   - Or press `Ctrl+F9` (Windows/Linux) / `Cmd+F9` (Mac)
-
-5. **Install on Device**
-   - Enable USB debugging on your Android device
-   - Connect device and run from Android Studio
-   - Or manually install: `adb install app/build/outputs/apk/debug/app-debug.apk`
-
-### Permissions Required
-
-The app requests these permissions:
-- `ACCESS_FINE_LOCATION` - GPS tracking
-- `ACCESS_COARSE_LOCATION` - Network-based location
-- `ACCESS_BACKGROUND_LOCATION` - Background location
-- `FOREGROUND_SERVICE` - Background tracking
-- `FOREGROUND_SERVICE_LOCATION` - Location in background
-- `WAKE_LOCK` - Prevent device sleep
-- `HIGH_SAMPLING_RATE_SENSORS` - High-frequency sensor data
-- `ACTIVITY_RECOGNITION` - Step counting
-- `POST_NOTIFICATIONS` - Android 13+ notification permission
-- `INTERNET` - Map tiles download
-- `ACCESS_NETWORK_STATE` - Network status check
-
----
-
-## Usage Guide
-
-### Starting a Trip
-
-1. Open the app and grant all requested permissions
-2. Wait for GPS to lock (status shows "GPS: OK")
-3. Tap the **Start** button to begin tracking
-4. Walk while the app records your path
-
-### Adding Markers
-
-1. Tap the **+** button (orange) to enter marker mode
-2. Tap on the map where you want to place the marker
-3. Select an emoji icon from the list
-4. Optionally enter a label for the marker
-5. Tap **Confirm** to save
-
-### Rotating the Map
-
-1. Place **two fingers** on the map
-2. Rotate in a circular motion
-3. The map will rotate 360°
-4. Double-tap to reset to North-up
-
-### Using Manual Mode
-
-1. Tap **Mode: Auto** to switch to Manual mode
-2. Use arrow buttons to turn left/right (90°) or U-turn
-3. Or tap the **compass icon** to open the 360° dial
-4. Drag the dial to select your exact heading, then confirm
-
-### When GPS is Unavailable
-
-1. Tap **No GPS** button to switch to dead reckoning mode
-2. The app will continue tracking using steps + heading
-3. Use manual controls to indicate turns
-4. When GPS returns, tap **No GPS** again to re-enable GPS tracking
-
-### Viewing Past Trips
-
-1. Navigate to **History** from the main menu
-2. Tap a trip to view details
-3. Tap **View on Map** to see the trip path
-4. Use export options to save as GPX or CSV
-
-### Exporting Data
-
-From History screen:
-- **Export CSV (choose folder)** - Select custom save location
-- **Export GPX (choose folder)** - Select custom save location  
-- **Export to Downloads** - Save directly to Downloads folder
-
-### Clearing Data
-
-1. Tap the **trash icon** (red) in the bottom right
-2. Choose an option:
-   - **Tracks only**: Clear current path
-   - **Markers only**: Delete all saved markers
-   - **Everything**: Clear both tracks and markers
-3. Confirm your choice
-
----
-
-## Screenshots Description
-
-<!-- Add descriptions of your screenshots here -->
-
-| Screen | Description |
-|--------|-------------|
-| Map View | Main tracking screen with GPS status, steps, distance, heading |
-| Markers | Custom emoji markers on the map with labels |
-| History | List of saved trips with export options |
-| Calibration | Step length calibration tools |
-
----
-
-## Project Structure
-
+```powershell
+python tools/export_v8_model.py
 ```
+
+The exporter expects the V8 training repository at `.codex-ml-codes-review/`. This directory is a local development dependency and should not be committed to this repository.
+
+It writes:
+
+```text
+app/src/main/assets/ml/
+|- v8_dead_reckoning.onnx
+|- v8_manifest.json
+`- v8_normalization.json
+```
+
+## Pothole Detection
+
+`PotholeDetector` uses a rolling multi-sample impact check rather than a single gyroscope spike. A detection combines acceleration shock, rotational vibration, and cluster persistence. It reports `Minor`, `Moderate`, or `Severe` with a signal-derived confidence score.
+
+Pothole monitoring starts with the IMU listener and is independent of an active navigation session. Alerts are rate-limited before they reach the UI.
+
+## Requirements
+
+- Android Studio with Android SDK Platform 34
+- JDK 17
+- Android device running Android 6.0 (API 23) or later
+- A device with an accelerometer and gyroscope for full inertial features
+- Location enabled on the device
+
+## Build and Install
+
+```powershell
+.\gradlew assembleDebug
+.\gradlew installDebug
+```
+
+The debug APK is written to:
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+To run the focused detector tests:
+
+```powershell
+.\gradlew testDebugUnitTest --tests nisargpatel.deadreckoning.PotholeDetectorTest
+```
+
+## Permissions
+
+The manifest declares location, sensor, notification, foreground-service, network, and optional storage/activity-recognition permissions. The runtime app needs location permission and enabled device location services before it can receive a GNSS fix and show a position marker.
+
+## Live Debugging
+
+With USB debugging enabled:
+
+```powershell
+$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+& $adb logcat -v time V8DeadReckoning:D LiveNavigation:D PotholeDetector:I AndroidRuntime:E '*:S'
+```
+
+Useful log tags:
+
+- `V8DeadReckoning`: model load and inference timing.
+- `LiveNavigation`: emitted pothole events and live navigation state work.
+- `PotholeDetector`: detected severity, confidence, shock, and vibration values.
+- `AndroidRuntime`: crashes.
+
+## Project Layout
+
+```text
 app/src/main/java/nisargpatel/deadreckoning/
-├── activity/           # UI Activities and Fragments
-│   ├── MapFragment.java       # Main map view with tracking + markers
-│   ├── MainNavigationActivity.java  # Activity wrapper
-│   ├── HistoryActivity.java  # Trip history list
-│   ├── GuideActivity.java    # Help & guide
-│   └── ...
-├── sensor/             # Core sensor processing
-│   ├── DeadReckoningEngine.java    # Position calculation
-│   ├── PreciseHeadingEstimator.java # Sensor fusion
-│   └── GPSCalibrator.java         # GPS correction
-├── stepcounting/       # Step detection algorithms
-├── orientation/        # Orientation estimation
-├── model/              # Data models (Trip, Marker, TurnEvent)
-├── storage/            # Trip & Marker persistence
-│   ├── TripStorage.java     # Trip data storage
-│   └── MarkerStorage.java   # Marker data storage
-├── service/            # Background tracking service
-└── view/              # Custom views (DegreeDialView)
+|- adapter/
+|  |- LocationAdapter.kt          # Fused location -> GNSS state
+|  |- SensorAdapter.kt            # Android sensors -> IMU state
+|  `- PotholeDetector.kt          # Multi-sample impact classification
+|- data/
+|  `- LiveNavigationRepository.kt # Active live application data flow
+|- ml/
+|  `- V8DeadReckoningEngine.kt    # ONNX Runtime inference and stationary gate
+|- ui/
+|  |- navigation/                 # Compose navigation shell
+|  |- screens/                    # Live navigation and diagnostics screens
+|  `- viewmodel/                  # Screen state holders
+|- domain/                         # State models and repository contract
+`- sensor/                         # Existing heading/DR support code
 
-app/src/main/res/
-├── layout/             # XML layouts
-├── drawable/           # Icons and graphics
-├── values/             # Strings, colors, styles
-└── ...
+app/src/main/assets/ml/             # Bundled V8 ONNX model and metadata
+tools/export_v8_model.py            # Repeatable ONNX export script
 ```
 
----
+## Current Limitations
 
-## Key Classes
+- The V8 model is intended for short GNSS outages; it is not a replacement for route-grade GNSS navigation.
+- Location permission must be granted by Android before the map can show the device position.
+- Motion and speed estimates can need per-device calibration because phone mounting, sensor bias, and driving surface differ from the model training data.
+- Map matching, offline map downloads, long-term session analytics, and several legacy diagnostic screens are still under active development.
+- Some legacy Java/XML screens remain in the codebase; the Compose `IDRAppShell` uses the live repository for the current app experience.
 
-| Class | Description |
-|-------|-------------|
-| `DeadReckoningEngine` | Core PDR algorithm, combines steps + heading |
-| `PreciseHeadingEstimator` | Sensor fusion (gyro + magnetometer + Kalman filter) |
-| `GPSCalibrator` | Calculates scale/heading correction from GPS |
-| `EnhancedStepCounter` | Peak detection step counting |
-| `TrackingService` | Foreground service for background tracking |
-| `DegreeDialView` | Custom 360° compass dial view |
-| `Trip` | Trip data model with GPX/CSV export |
-| `Marker` | Custom marker model with emoji + label |
-| `MarkerStorage` | JSON persistence for markers |
+## Technology
 
----
+- Kotlin and Java
+- Jetpack Compose and Material 3
+- Google Play Services Fused Location Provider
+- OSMDroid / OpenStreetMap tiles
+- ONNX Runtime Android
+- EJML
 
-## Sensors Used
+## License
 
-| Sensor | Purpose |
-|--------|---------|
-| `TYPE_GRAVITY` | Stable gravity vector for orientation |
-| `TYPE_MAGNETIC_FIELD` | Compass heading |
-| `TYPE_GYROSCOPE` | Rate of turn for short-term heading |
-| `TYPE_LINEAR_ACCELERATION` | Step detection |
-| `FusedLocationProvider` | GPS positioning |
-
----
-
-## Technical Details
-
-- **Map Provider**: OSMDroid (OpenStreetMap)
-- **Location**: Google Play Services FusedLocationProvider
-- **Matrix Library**: EJML for calculations
-- **Min SDK**: 22 (Android 5.1)
-- **Target SDK**: 34 (Android 14)
-
----
-
-## Credits & License
-
-**Original Project**: [nisargnp/DeadReckoning](https://github.com/nisargnp/DeadReckoning)
-
-**Fork & Modifications**: https://github.com/SaturnXIII/Dead-Reckoning-Pro
-
-**Libraries Used**:
-- OSMDroid (OpenStreetMap)
-- Google Play Services Location
-- Material Components for Android
-- EJML (Efficient Java Matrix Library)
-- AChartEngine
-
-**License**: Open Source - Feel free to contribute and modify!
-
----
-
-## Troubleshooting
-
-### Steps not being counted
-- Ensure the app has activity recognition permission
-- Keep phone in pocket or hand while walking
-- Try calibrating step length in Settings
-
-### Heading drifts
-- Calibrate magnetometer (go to Calibration in menu)
-- Keep phone away from metal objects
-- Use manual mode for better control
-
-### GPS not working
-- Ensure location permission is granted
-- Check GPS is enabled in phone settings
-- Wait for initial lock (may take 30-60 seconds)
-
-### App crashes on export
-- Check storage permission
-- Try "Export to Downloads" option
-- Ensure enough free storage space
-
-### Marker not appearing
-- Make sure you've selected an emoji and confirmed
-- Try zooming in on the map
-
----
-
-## Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
----
-
-**Note**: This app is for educational and research purposes. GPS should be used as the primary navigation source when available. Dead reckoning provides estimates that may drift over time, especially without regular GPS calibration.
+This project is provided for educational and research use. Check the licenses of bundled models, data, and third-party dependencies before redistributing it.

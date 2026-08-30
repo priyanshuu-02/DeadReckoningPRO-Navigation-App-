@@ -29,36 +29,29 @@ class NavigationViewModel(
     private val _selectedRoute = MutableStateFlow(RouteInfo())
     val selectedRoute: StateFlow<RouteInfo> = _selectedRoute.asStateFlow()
 
-    init {
-        // Fetch initial street route to default city center
-        selectDestination("Vijayawada City Center", GeoPoint(16.5062, 80.6480))
-    }
-
     fun startNavigation() = repository.startNavigation()
     fun stopNavigation() = repository.stopNavigation()
+    fun startGnssMonitoring() = repository.startGnssMonitoring()
 
     fun selectDestination(name: String, destinationPoint: GeoPoint) {
         viewModelScope.launch(Dispatchers.IO) {
             val currentNav = navigationState.value
-            val sourcePoint = if (currentNav.latitude != 0.0 && currentNav.longitude != 0.0) {
-                GeoPoint(currentNav.latitude, currentNav.longitude)
-            } else {
-                GeoPoint(16.5215, 80.5216)
+            if (currentNav.latitude == 0.0 && currentNav.longitude == 0.0) {
+                val pendingRoute = RouteInfo(
+                    destinationName = name,
+                    destinationPoint = destinationPoint,
+                    nextManeuver = "Start navigation to acquire your location"
+                )
+                _selectedRoute.value = pendingRoute
+                repository.setActiveRoute(pendingRoute)
+                return@launch
             }
-
-            val route = OSRMRouteFetcher.fetchRoute(sourcePoint, destinationPoint, name)
+            val sourcePoint = GeoPoint(currentNav.latitude, currentNav.longitude)
+            val onlineRoute = OSRMRouteFetcher.fetchRoute(sourcePoint, destinationPoint, name)
+            val route = if (onlineRoute.routePoints.size > 1) onlineRoute else
+                repository.findOfflineRoute(sourcePoint, destinationPoint, name) ?: onlineRoute
             _selectedRoute.value = route
+            repository.setActiveRoute(route)
         }
     }
-
-    // Simulation / Engine Actions
-    fun simulateGNSSActive() = repository.simulateModeGNSSActive()
-    fun simulateOutage() = repository.simulateOutage()
-    fun simulatePothole() = repository.simulatePothole()
-    fun simulateRecovery() = repository.simulateRecovery()
-    fun simulateOffline() = repository.simulateOffline()
-    fun simulateError() = repository.simulateError()
-    fun resetDemo() = repository.resetDemo()
-    fun startAutoPlay() = repository.startAutoPlay()
-    fun stopAutoPlay() = repository.stopAutoPlay()
 }

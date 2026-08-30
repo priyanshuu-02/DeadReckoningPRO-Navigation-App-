@@ -102,42 +102,15 @@ object OSRMRouteFetcher {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "OSRM routing failed, falling back to street-grid generator", e)
+            Log.e(TAG, "OSRM routing failed", e)
         }
 
-        // Fallback: Multi-segment street grid generator (never a straight line)
-        return@withContext generateStreetGridFallback(start, end, destinationName)
-    }
-
-    private fun generateStreetGridFallback(start: GeoPoint, end: GeoPoint, destinationName: String): RouteInfo {
-        val points = mutableListOf<GeoPoint>()
-        points.add(start)
-
-        val midLat = start.latitude + (end.latitude - start.latitude) * 0.4
-        val midLon = start.longitude + (end.longitude - start.longitude) * 0.7
-
-        // Corner 1
-        points.add(GeoPoint(start.latitude, midLon))
-        // Corner 2
-        points.add(GeoPoint(midLat, midLon))
-        // Corner 3
-        points.add(GeoPoint(midLat, end.longitude))
-        // Destination
-        points.add(end)
-
-        val distanceKm = Math.max(0.5, Math.round(start.distanceToAsDouble(end) / 100.0) / 10.0)
-        val durationMins = Math.max(2, (distanceKm * 2.2).toInt())
-
-        return RouteInfo(
+        return@withContext RouteInfo(
             sourceName = "Current Location",
             destinationName = destinationName,
             sourcePoint = start,
             destinationPoint = end,
-            routePoints = points,
-            totalDistanceKm = distanceKm,
-            estimatedTimeMinutes = durationMins,
-            nextManeuver = "Turn Right onto MG Road in 250m",
-            maneuverIconType = ManeuverIconType.RIGHT
+            nextManeuver = "Route unavailable. Check your connection."
         )
     }
 }

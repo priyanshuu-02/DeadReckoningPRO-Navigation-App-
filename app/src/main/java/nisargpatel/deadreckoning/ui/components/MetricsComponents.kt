@@ -1,7 +1,5 @@
 package nisargpatel.deadreckoning.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -28,10 +25,10 @@ fun SpeedIndicator(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.shadow(6.dp, shape = RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        color = AutomotiveCardBg,
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryBlue.copy(alpha = 0.4f))
+        modifier = modifier.shadow(2.dp, shape = RoundedCornerShape(8.dp)),
+        shape = RoundedCornerShape(8.dp),
+        color = PanelRaised,
+        border = androidx.compose.foundation.BorderStroke(1.dp, DividerSoft)
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -45,13 +42,13 @@ fun SpeedIndicator(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(text = "SPEED", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                Text(text = "SPEED", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = String.format("%.1f", speedKmh),
                 color = TextPrimary,
-                fontSize = 28.sp,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Black
             )
             Text(text = "km/h", color = PrimaryBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -65,10 +62,10 @@ fun HeadingIndicator(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.shadow(6.dp, shape = RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        color = AutomotiveCardBg,
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryBlue.copy(alpha = 0.4f))
+        modifier = modifier.shadow(2.dp, shape = RoundedCornerShape(8.dp)),
+        shape = RoundedCornerShape(8.dp),
+        color = PanelRaised,
+        border = androidx.compose.foundation.BorderStroke(1.dp, DividerSoft)
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -82,13 +79,13 @@ fun HeadingIndicator(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(text = "HEADING", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                Text(text = "HEADING", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = String.format("%.0f°", headingDegrees),
                 color = TextPrimary,
-                fontSize = 28.sp,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Black
             )
             Text(text = "Degrees", color = PrimaryBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -106,8 +103,8 @@ fun MetricCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.shadow(4.dp, shape = RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.shadow(2.dp, shape = RoundedCornerShape(8.dp)),
+        shape = RoundedCornerShape(8.dp),
         color = AutomotiveCardBg,
         border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
     ) {
@@ -117,10 +114,10 @@ fun MetricCard(
                     Icon(imageVector = icon, contentDescription = title, tint = PrimaryBlue, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                 }
-                Text(text = title.uppercase(), color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                Text(text = title.uppercase(), color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(6.dp))
-            Text(text = value, color = valueColor, fontSize = 22.sp, fontWeight = FontWeight.Black)
+            Text(text = value, color = valueColor, fontSize = 21.sp, fontWeight = FontWeight.Black)
             if (subtitle != null) {
                 Text(text = subtitle, color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
             }
@@ -138,10 +135,10 @@ fun AIStatusCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(8.dp, shape = RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        color = AutomotiveCardBg,
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, PurpleAI.copy(alpha = 0.6f))
+            .shadow(2.dp, shape = RoundedCornerShape(8.dp)),
+        shape = RoundedCornerShape(8.dp),
+        color = PanelRaised,
+        border = androidx.compose.foundation.BorderStroke(1.dp, PurpleAI.copy(alpha = 0.55f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -152,7 +149,7 @@ fun AIStatusCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(imageVector = Icons.Default.Psychology, contentDescription = "AI", tint = PurpleAI, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "ON-DEVICE AI ENGINE", color = PurpleAI, fontWeight = FontWeight.Black, fontSize = 14.sp, letterSpacing = 0.5.sp)
+                    Text(text = "ON-DEVICE AI ENGINE", color = PurpleAI, fontWeight = FontWeight.Black, fontSize = 14.sp)
                 }
                 Surface(
                     shape = CircleShape,
@@ -160,7 +157,7 @@ fun AIStatusCard(
                     border = androidx.compose.foundation.BorderStroke(1.dp, PurpleAI)
                 ) {
                     Text(
-                        text = "${inferenceTimeMs}ms latency",
+                        text = "${inferenceTimeMs} ms",
                         color = PurpleAI,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
