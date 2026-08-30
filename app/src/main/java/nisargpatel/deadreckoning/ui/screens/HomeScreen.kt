@@ -29,6 +29,9 @@ fun HomeScreen(
 ) {
     val navState by viewModel.navigationState.collectAsState()
     val sessionState by viewModel.sessionState.collectAsState()
+    val gnssState by viewModel.gnssState.collectAsState()
+    val aiState by viewModel.aiState.collectAsState()
+    val sensorState by viewModel.sensorState.collectAsState()
     val lastSession = sessionState.sessions.firstOrNull()
 
     Column(
@@ -79,8 +82,8 @@ fun HomeScreen(
             ) {
                 Icon(imageVector = Icons.Default.Map, contentDescription = "Map Preview", tint = PrimaryBlue.copy(alpha = 0.4f), modifier = Modifier.size(64.dp))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "LIVE MAP ROUTE PREVIEW", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text(text = "NH-65 Highway (Vijayawada)", color = TextSecondary, fontSize = 12.sp)
+                    Text(text = if (navState.latitude == 0.0 && navState.longitude == 0.0) "AWAITING LOCATION" else "LIVE POSITION", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(text = if (navState.latitude == 0.0 && navState.longitude == 0.0) "Start navigation to acquire a GNSS fix" else String.format("%.5f, %.5f", navState.latitude, navState.longitude), color = TextSecondary, fontSize = 12.sp)
                 }
             }
         }
@@ -99,9 +102,9 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = "GNSS  ✓", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    Text(text = "IMU  ✓", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    Text(text = "AI  ✓", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(text = "GNSS ${if (gnssState.isAvailable) "READY" else "WAITING"}", color = if (gnssState.isAvailable) SuccessGreen else WarningAmber, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(text = "IMU ${if (sensorState.isAccelAvailable && sensorState.isGyroAvailable) "READY" else "UNAVAILABLE"}", color = if (sensorState.isAccelAvailable && sensorState.isGyroAvailable) SuccessGreen else ErrorRed, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(text = "AI ${if (aiState.isModelLoaded) "READY" else "UNAVAILABLE"}", color = if (aiState.isModelLoaded) SuccessGreen else ErrorRed, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(
@@ -110,11 +113,11 @@ fun HomeScreen(
                 ) {
                     Column {
                         Text(text = "Position Accuracy", color = TextSecondary, fontSize = 11.sp)
-                        Text(text = "${navState.accuracyMeters} m", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(text = if (navState.accuracyMeters > 0.0) String.format("%.1f m", navState.accuracyMeters) else "Awaiting fix", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(text = "System Health", color = TextSecondary, fontSize = 11.sp)
-                        Text(text = "92%", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(text = "Model", color = TextSecondary, fontSize = 11.sp)
+                        Text(text = aiState.modelVersion, color = if (aiState.isModelLoaded) SuccessGreen else ErrorRed, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }

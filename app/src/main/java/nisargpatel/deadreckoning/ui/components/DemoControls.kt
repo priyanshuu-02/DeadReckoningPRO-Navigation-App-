@@ -18,7 +18,6 @@ import nisargpatel.deadreckoning.ui.theme.*
 fun DemoControls(
     onGNSSActive: () -> Unit,
     onSimulateOutage: () -> Unit,
-    onSimulatePothole: () -> Unit,
     onSimulateRecovery: () -> Unit,
     onSimulateOffline: () -> Unit,
     onSimulateError: () -> Unit,
@@ -109,12 +108,12 @@ fun DemoControls(
                         Text(text = "OUTAGE", fontSize = 10.sp, color = ErrorRed, fontWeight = FontWeight.Bold)
                     }
                     OutlinedButton(
-                        onClick = onSimulatePothole,
+                        onClick = onSimulateRecovery,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(2.dp)
                     ) {
-                        Text(text = "POTHOLE", fontSize = 10.sp, color = WarningAmber, fontWeight = FontWeight.Bold)
+                        Text(text = "RECOVERY", fontSize = 10.sp, color = PrimaryBlue, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -125,14 +124,6 @@ fun DemoControls(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    OutlinedButton(
-                        onClick = onSimulateRecovery,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(2.dp)
-                    ) {
-                        Text(text = "RECOVERY", fontSize = 10.sp, color = PrimaryBlue, fontWeight = FontWeight.Bold)
-                    }
                     OutlinedButton(
                         onClick = onSimulateOffline,
                         modifier = Modifier.weight(1f),
