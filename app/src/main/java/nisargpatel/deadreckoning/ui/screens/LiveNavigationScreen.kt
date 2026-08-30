@@ -1,80 +1,167 @@
 package nisargpatel.deadreckoning.ui.screens
 
+import android.graphics.Bitmap
+import android.graphics.Color as AndroidColor
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import nisargpatel.deadreckoning.domain.model.NavigationMode
 import nisargpatel.deadreckoning.ui.components.*
 import nisargpatel.deadreckoning.ui.theme.*
 import nisargpatel.deadreckoning.ui.viewmodel.NavigationViewModel
+import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+
+private const val TAG = "LiveNavMap"
+private const val APP_USER_AGENT = "DeadReckoningPro/1.0 (Android; nisargpatel.deadreckoning)"
 
 @Composable
 fun LiveNavigationScreen(
     viewModel: NavigationViewModel
 ) {
     val navState by viewModel.navigationState.collectAsState()
-    val gnssState by viewModel.gnssState.collectAsState()
-    val aiState by viewModel.aiState.collectAsState()
+    val routeInfo by viewModel.selectedRoute.collectAsState()
+
+    var mapViewRef by remember { mutableStateOf<MapView?>(null) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Bind OSMDroid MapView lifecycle to active Compose lifecycle
+    DisposableEffect(lifecycleOwner, mapViewRef) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    Log.i(TAG, "Resuming OSMDroid MapView and street tile downloader threads")
+                    mapViewRef?.onResume()
+                }
+                Lifecycle.Event.ON_PAUSE -> {
+                    Log.i(TAG, "Pausing OSMDroid MapView")
+                    mapViewRef?.onPause()
+                }
+                Lifecycle.Event.ON_DESTROY -> {
+                    Log.i(TAG, "Detaching OSMDroid MapView")
+                    mapViewRef?.onDetach()
+                }
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        mapViewRef?.onResume()
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            mapViewRef?.onPause()
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(AutomotiveDarkBg)
+            .background(UberBlack)
     ) {
-        // 1. Dominant OSMDroid MapView Area (wrapped with AndroidView & India boundary overlay)
+        // 1. Dominant OSMDroid MapView Area (Fullscreen Background)
         AndroidView(
             factory = { context ->
+                Log.i(TAG, "Initializing MapView with MAPNIK tiles")
+
+                val config = Configuration.getInstance()
+                config.userAgentValue = APP_USER_AGENT
+
                 MapView(context).apply {
                     setTileSource(TileSourceFactory.MAPNIK)
                     setMultiTouchControls(true)
+                    setDestroyMode(false)
+                    controller.setZoom(17.5)
+                    onResume()
+
+                    // Rotation gesture overlay
                     val rotationOverlay = RotationGestureOverlay(context, this)
                     rotationOverlay.isEnabled = true
                     overlays.add(rotationOverlay)
-                    nisargpatel.deadreckoning.util.IndiaBoundaryOverlayHelper.applyOfficialBoundary(context, this)
-                    controller.setZoom(18.0)
+
+                    // Hardware Location Provider Overlay (Person icon hidden)
+                    try {
+                        val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), this)
+                        locationOverlay.enableMyLocation()
+                        locationOverlay.enableFollowLocation()
+                        val emptyBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+                        locationOverlay.setPersonIcon(emptyBitmap)
+                        locationOverlay.setDirectionIcon(emptyBitmap)
+                        overlays.add(locationOverlay)
+                        Log.i(TAG, "Hardware MyLocationNewOverlay enabled")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error initializing MyLocationNewOverlay", e)
+                    }
+
+                    // Official Survey of India Boundary Overlay
+                    try {
+                        nisargpatel.deadreckoning.util.IndiaBoundaryOverlayHelper.applyOfficialBoundary(context, this)
+                        Log.i(TAG, "Official Survey of India boundary overlay applied")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error applying India boundary overlay", e)
+                    }
+
+                    mapViewRef = this
                 }
             },
             update = { mapView ->
-                if (navState.latitude != 0.0 || navState.longitude != 0.0) {
-                    val position = GeoPoint(navState.latitude, navState.longitude)
-                    val marker = mapView.overlays.filterIsInstance<Marker>().firstOrNull()
-                        ?: Marker(mapView).also {
-                            it.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                            it.title = "Current location"
-                            mapView.overlays.add(it)
-                        }
-                    marker.position = position
-                    marker.rotation = (-navState.headingDegrees).toFloat()
-                    mapView.controller.setCenter(position)
-                    mapView.invalidate()
+                mapViewRef = mapView
+
+                // Remove any old displacement track lines if present
+                val oldTrackLines = mapView.overlays.filterIsInstance<Polyline>().filter { it.id == "uber_actual_track" }
+                if (oldTrackLines.isNotEmpty()) {
+                    mapView.overlays.removeAll(oldTrackLines)
                 }
+
+                // 1A. Draw / Update Mint Green OSRM Target Street Route Polyline
+                val existingTargetLine = mapView.overlays.filterIsInstance<Polyline>().firstOrNull { it.id == "uber_target_route" }
+                val targetPolyline = existingTargetLine ?: Polyline().also { line ->
+                    line.id = "uber_target_route"
+                    line.outlinePaint.color = AndroidColor.parseColor("#10B981")
+                    line.outlinePaint.strokeWidth = 12.0f
+                    mapView.overlays.add(line)
+                }
+                targetPolyline.setPoints(routeInfo.routePoints)
+
+                // 1B. Current Vehicle Location
+                val currentPos = if (navState.latitude != 0.0 || navState.longitude != 0.0) {
+                    GeoPoint(navState.latitude, navState.longitude)
+                } else {
+                    routeInfo.sourcePoint
+                }
+
+                // 1C. Sleek Top-Down Rotating Vehicle Car Marker
+                UberVehicleMarker.updateVehicleMarker(
+                    mapView = mapView,
+                    position = currentPos,
+                    headingDegrees = navState.headingDegrees
+                )
+
+                mapView.controller.animateTo(currentPos)
+                mapView.invalidate()
             },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Top Status HUD Overlay (Navigation Mode & Outage Warning)
+        // 2. Top Floating Uber Pickup & Destination Search Bar + Status Indicator
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(12.dp)
+                .padding(top = 16.dp, start = 14.dp, end = 14.dp)
                 .fillMaxWidth()
         ) {
             Row(
@@ -90,95 +177,50 @@ fun LiveNavigationScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 OutageBanner(outageSeconds = navState.outageDurationSeconds)
             }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Uber Floating Search Bar
+            UberSearchBar(
+                currentRoute = routeInfo,
+                onDestinationSelected = { name, point ->
+                    Log.i(TAG, "User selected destination: $name ($point)")
+                    viewModel.selectDestination(name, point)
+                }
+            )
         }
 
-        // Bottom Automotive Dashboard Overlay (Speed, Heading, Controls)
-        Column(
+        // 3. Bottom Uber Turn-by-Turn Navigation HUD Card
+        UberNavigationHUD(
+            routeInfo = routeInfo,
+            speedKmh = navState.speedKmh,
+            headingDegrees = navState.headingDegrees,
+            accuracyMeters = navState.accuracyMeters,
+            isNavigating = navState.isNavigating,
+            onToggleNavigation = {
+                if (navState.isNavigating) {
+                    Log.i(TAG, "User stopped navigation")
+                    viewModel.stopNavigation()
+                } else {
+                    Log.i(TAG, "User started navigation")
+                    viewModel.startNavigation()
+                }
+            },
+            onRecenterMap = {
+                mapViewRef?.let { map ->
+                    val pos = if (navState.latitude != 0.0 || navState.longitude != 0.0) {
+                        GeoPoint(navState.latitude, navState.longitude)
+                    } else {
+                        routeInfo.sourcePoint
+                    }
+                    Log.i(TAG, "Recentering map on position: $pos")
+                    map.controller.animateTo(pos)
+                    map.controller.setZoom(18.5)
+                }
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(12.dp)
-                .fillMaxWidth()
-        ) {
-            // Floating SIH Demo Controls Panel
-            DemoControls(
-                onGNSSActive = { viewModel.simulateGNSSActive() },
-                onSimulateOutage = { viewModel.simulateOutage() },
-                onSimulatePothole = { viewModel.simulatePothole() },
-                onSimulateRecovery = { viewModel.simulateRecovery() },
-                onSimulateOffline = { viewModel.simulateOffline() },
-                onSimulateError = { viewModel.simulateError() },
-                onResetDemo = { viewModel.resetDemo() },
-                onAutoPlay = { viewModel.startAutoPlay() }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Main Automotive Bottom HUD Card - Glassmorphism & Shadow
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(12.dp, shape = RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                color = AutomotiveDarkBg.copy(alpha = 0.94f),
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryBlue.copy(alpha = 0.5f))
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(text = "SPEED", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                        Text(
-                            text = String.format("%.1f km/h", navState.speedKmh),
-                            color = TextPrimary,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
-
-                    Column {
-                        Text(text = "HEADING", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                        Text(
-                            text = String.format("%.0f°", navState.headingDegrees),
-                            color = PrimaryBlue,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
-
-                    Column {
-                        Text(text = "ACCURACY", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                        Text(
-                            text = "${navState.accuracyMeters} m",
-                            color = if (navState.accuracyMeters < 5) SuccessGreen else WarningAmber,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
-
-                    // Start/Stop Navigation iOS Pill Button
-                    IconButton(
-                        onClick = {
-                            if (navState.isNavigating) viewModel.stopNavigation() else viewModel.startNavigation()
-                        },
-                        modifier = Modifier
-                            .size(48.dp)
-                            .shadow(6.dp, shape = CircleShape)
-                            .background(
-                                color = if (navState.isNavigating) ErrorRed else SuccessGreen,
-                                shape = CircleShape
-                            )
-                    ) {
-                        Icon(
-                            imageVector = if (navState.isNavigating) Icons.Default.Stop else Icons.Default.PlayArrow,
-                            contentDescription = "Toggle Nav",
-                            tint = Color.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-            }
-        }
+                .padding(14.dp)
+        )
     }
 }

@@ -1,16 +1,14 @@
 package nisargpatel.deadreckoning.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,19 +37,19 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AutomotiveDarkBg)
+            .background(UberBlack)
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // App Title & System Status Badge
+        // Uber App Title & System Status Badge
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(text = "IDR NAVIGATION", color = PrimaryBlue, fontWeight = FontWeight.Black, fontSize = 22.sp, letterSpacing = 1.sp)
-                Text(text = "Intelligent Dead Reckoning System", color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text(text = "UBER IDR NAV", color = UberBlue, fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 1.sp)
+                Text(text = "Intelligent Dead Reckoning Navigation", color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
             ModeIndicator(mode = navState.mode)
         }
@@ -69,49 +67,44 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Map Preview Card
+        // Uber Destination Quick Search Launcher Card
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp)
-                .shadow(8.dp, shape = RoundedCornerShape(24.dp)),
-            shape = RoundedCornerShape(24.dp),
-            color = AutomotiveCardBg,
-            border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryBlue.copy(alpha = 0.5f))
+                .clickable { onStartNavClicked() }
+                .shadow(10.dp, shape = RoundedCornerShape(20.dp)),
+            shape = RoundedCornerShape(20.dp),
+            color = UberDarkCard,
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, UberBlue.copy(alpha = 0.5f))
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.padding(18.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(imageVector = Icons.Default.Map, contentDescription = "Map Preview", tint = PrimaryBlue.copy(alpha = 0.4f), modifier = Modifier.size(72.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(imageVector = Icons.Default.Search, contentDescription = "Search", tint = UberBlue, modifier = Modifier.size(28.dp))
+                Spacer(modifier = Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "WHERE TO?", color = TextPrimary, fontWeight = FontWeight.Black, fontSize = 17.sp, letterSpacing = 0.5.sp)
                     Text(
-                        text = if (navState.latitude == 0.0 && navState.longitude == 0.0) "AWAITING LOCATION FIX" else "LIVE POSITION PREVIEW",
-                        color = TextPrimary,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 15.sp,
-                        letterSpacing = 0.5.sp
-                    )
-                    Text(
-                        text = if (navState.latitude == 0.0 && navState.longitude == 0.0) "Start navigation to acquire a GNSS fix" else String.format("%.5f, %.5f", navState.latitude, navState.longitude),
+                        text = if (navState.latitude == 0.0 && navState.longitude == 0.0) "Tap to select destination & start route" else String.format("Current: %.4f, %.4f", navState.latitude, navState.longitude),
                         color = TextSecondary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
+                        fontSize = 12.sp
                     )
                 }
+                Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Go", tint = UberMintGreen, modifier = Modifier.size(24.dp))
             }
         }
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Sensors & Accuracy Summary Row (Integrated Dynamic Friend Checks + High Contrast)
+        // Sensors & Accuracy Summary Card
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(6.dp, shape = RoundedCornerShape(20.dp)),
             shape = RoundedCornerShape(20.dp),
-            color = AutomotiveCardBg,
-            border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
+            color = UberCardSurface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, UberCardBorder)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -120,19 +113,19 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = "GNSS ${if (gnssState.isAvailable) "✓" else "WAITING"}",
-                        color = if (gnssState.isAvailable) SuccessGreen else WarningAmber,
+                        color = if (gnssState.isAvailable) UberMintGreen else UberAmber,
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp
                     )
                     Text(
                         text = "IMU ${if (sensorState.isAccelAvailable && sensorState.isGyroAvailable) "✓" else "UNAVAILABLE"}",
-                        color = if (sensorState.isAccelAvailable && sensorState.isGyroAvailable) SuccessGreen else ErrorRed,
+                        color = if (sensorState.isAccelAvailable && sensorState.isGyroAvailable) UberMintGreen else ErrorRed,
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp
                     )
                     Text(
                         text = "AI ${if (aiState.isModelLoaded) "✓" else "UNAVAILABLE"}",
-                        color = if (aiState.isModelLoaded) SuccessGreen else ErrorRed,
+                        color = if (aiState.isModelLoaded) UberMintGreen else ErrorRed,
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp
                     )
@@ -155,7 +148,7 @@ fun HomeScreen(
                         Text(text = "AI Model Engine", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                         Text(
                             text = aiState.modelVersion,
-                            color = if (aiState.isModelLoaded) SuccessGreen else PurpleAI,
+                            color = if (aiState.isModelLoaded) UberMintGreen else UberBlue,
                             fontWeight = FontWeight.Black,
                             fontSize = 15.sp
                         )
@@ -166,7 +159,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Start Navigation Button - Premium iOS Capsule Style
+        // Start Navigation Button - Uber Capsule Style
         Button(
             onClick = {
                 viewModel.startNavigation()
@@ -176,10 +169,10 @@ fun HomeScreen(
                 .fillMaxWidth()
                 .height(56.dp)
                 .shadow(10.dp, shape = CircleShape),
-            colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+            colors = ButtonDefaults.buttonColors(containerColor = UberMintGreen),
             shape = CircleShape
         ) {
-            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = "Start Nav", tint = Color.Black, modifier = Modifier.size(22.dp))
+            Icon(imageVector = Icons.Default.Navigation, contentDescription = "Start Nav", tint = Color.Black, modifier = Modifier.size(22.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = "START NAVIGATION", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 16.sp, letterSpacing = 0.5.sp)
         }
@@ -193,20 +186,20 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .shadow(4.dp, shape = RoundedCornerShape(18.dp)),
                 shape = RoundedCornerShape(18.dp),
-                color = AutomotiveCardBg,
-                border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
+                color = UberCardSurface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, UberCardBorder)
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(imageVector = Icons.Default.History, contentDescription = "History", tint = PrimaryBlue, modifier = Modifier.size(24.dp))
+                    Icon(imageVector = Icons.Default.History, contentDescription = "History", tint = UberBlue, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = "LAST SESSION", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
                         Text(text = "${lastSession.distanceKm} km • ${lastSession.durationString}", color = TextPrimary, fontWeight = FontWeight.Black, fontSize = 15.sp)
                     }
-                    Text(text = lastSession.status, color = SuccessGreen, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                    Text(text = lastSession.status, color = UberMintGreen, fontSize = 12.sp, fontWeight = FontWeight.Black)
                 }
             }
         }

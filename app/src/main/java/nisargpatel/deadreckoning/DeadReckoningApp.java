@@ -15,6 +15,8 @@ public class DeadReckoningApp extends Application {
 
     private static DeadReckoningApp instance;
 
+    private static final String USER_AGENT = "DeadReckoningPro/1.0 (Android; nisargpatel.deadreckoning)";
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -26,7 +28,11 @@ public class DeadReckoningApp extends Application {
     private void initOSMDroid() {
         IConfigurationProvider config = Configuration.getInstance();
 
-        config.setUserAgentValue(getPackageName());
+        // Load preferences FIRST, then override user-agent AFTER
+        config.load(this, getSharedPreferences("osmdroid", Context.MODE_PRIVATE));
+
+        // Set a descriptive user-agent (OSM tile policy requires app identification)
+        config.setUserAgentValue(USER_AGENT);
 
         File basePath = new File(getCacheDir(), "osmdroid");
         config.setOsmdroidBasePath(basePath);
@@ -41,8 +47,6 @@ public class DeadReckoningApp extends Application {
 
         config.setAnimationSpeedDefault(500);
         config.setAnimationSpeedShort(250);
-
-        config.load(this, getSharedPreferences("osmdroid", Context.MODE_PRIVATE));
     }
 
     public static Context getAppContext() {
