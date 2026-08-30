@@ -21,12 +21,12 @@ import nisargpatel.deadreckoning.ui.theme.*
 fun DemoControls(
     onGNSSActive: () -> Unit,
     onSimulateOutage: () -> Unit,
-    onSimulatePothole: () -> Unit,
     onSimulateRecovery: () -> Unit,
     onSimulateOffline: () -> Unit,
     onSimulateError: () -> Unit,
     onResetDemo: () -> Unit,
     onAutoPlay: () -> Unit,
+    onSimulatePothole: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -121,13 +121,13 @@ fun DemoControls(
                         Text(text = "OUTAGE", fontSize = 10.sp, color = ErrorRed, fontWeight = FontWeight.ExtraBold)
                     }
                     OutlinedButton(
-                        onClick = onSimulatePothole,
+                        onClick = onSimulateRecovery,
                         modifier = Modifier.weight(1f),
                         shape = CircleShape,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, WarningAmber),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue),
                         contentPadding = PaddingValues(vertical = 6.dp)
                     ) {
-                        Text(text = "POTHOLE", fontSize = 10.sp, color = WarningAmber, fontWeight = FontWeight.ExtraBold)
+                        Text(text = "RECOVERY", fontSize = 10.sp, color = PrimaryBlue, fontWeight = FontWeight.ExtraBold)
                     }
                 }
 
@@ -138,15 +138,6 @@ fun DemoControls(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    OutlinedButton(
-                        onClick = onSimulateRecovery,
-                        modifier = Modifier.weight(1f),
-                        shape = CircleShape,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue),
-                        contentPadding = PaddingValues(vertical = 6.dp)
-                    ) {
-                        Text(text = "RECOVERY", fontSize = 10.sp, color = PrimaryBlue, fontWeight = FontWeight.ExtraBold)
-                    }
                     OutlinedButton(
                         onClick = onSimulateOffline,
                         modifier = Modifier.weight(1f),
@@ -164,6 +155,17 @@ fun DemoControls(
                         contentPadding = PaddingValues(vertical = 6.dp)
                     ) {
                         Text(text = "ERROR", fontSize = 10.sp, color = ErrorRed, fontWeight = FontWeight.ExtraBold)
+                    }
+                    if (onSimulatePothole != null) {
+                        OutlinedButton(
+                            onClick = onSimulatePothole,
+                            modifier = Modifier.weight(1f),
+                            shape = CircleShape,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, WarningAmber),
+                            contentPadding = PaddingValues(vertical = 6.dp)
+                        ) {
+                            Text(text = "POTHOLE", fontSize = 10.sp, color = WarningAmber, fontWeight = FontWeight.ExtraBold)
+                        }
                     }
                 }
             }

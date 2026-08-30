@@ -24,7 +24,6 @@ class NavigationViewModel(
     // Simulation / Demo Actions
     fun simulateGNSSActive() = repository.simulateModeGNSSActive()
     fun simulateOutage() = repository.simulateOutage()
-    fun simulatePothole() = repository.simulatePothole()
     fun simulateRecovery() = repository.simulateRecovery()
     fun simulateOffline() = repository.simulateOffline()
     fun simulateError() = repository.simulateError()

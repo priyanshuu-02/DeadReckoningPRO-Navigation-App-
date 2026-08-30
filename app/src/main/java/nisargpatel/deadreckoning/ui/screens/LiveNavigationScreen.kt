@@ -23,6 +23,7 @@ import nisargpatel.deadreckoning.ui.viewmodel.NavigationViewModel
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 
 @Composable
@@ -38,7 +39,7 @@ fun LiveNavigationScreen(
             .fillMaxSize()
             .background(AutomotiveDarkBg)
     ) {
-        // 1. Dominant OSMDroid MapView Area (wrapped with AndroidView)
+        // 1. Dominant OSMDroid MapView Area (wrapped with AndroidView & India boundary overlay)
         AndroidView(
             factory = { context ->
                 MapView(context).apply {
@@ -47,15 +48,24 @@ fun LiveNavigationScreen(
                     val rotationOverlay = RotationGestureOverlay(context, this)
                     rotationOverlay.isEnabled = true
                     overlays.add(rotationOverlay)
+                    nisargpatel.deadreckoning.util.IndiaBoundaryOverlayHelper.applyOfficialBoundary(context, this)
                     controller.setZoom(18.0)
-                    controller.setCenter(GeoPoint(16.5062, 80.6480))
                 }
             },
             update = { mapView ->
-                val targetPoint = navState.latitude.let { lat ->
-                    if (lat != 0.0) GeoPoint(lat, navState.longitude) else GeoPoint(16.5062, 80.6480)
+                if (navState.latitude != 0.0 || navState.longitude != 0.0) {
+                    val position = GeoPoint(navState.latitude, navState.longitude)
+                    val marker = mapView.overlays.filterIsInstance<Marker>().firstOrNull()
+                        ?: Marker(mapView).also {
+                            it.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                            it.title = "Current location"
+                            mapView.overlays.add(it)
+                        }
+                    marker.position = position
+                    marker.rotation = (-navState.headingDegrees).toFloat()
+                    mapView.controller.setCenter(position)
+                    mapView.invalidate()
                 }
-                mapView.controller.setCenter(targetPoint)
             },
             modifier = Modifier.fillMaxSize()
         )

@@ -31,6 +31,7 @@ fun IntelligenceScreen(
     viewModel: IntelligenceViewModel
 ) {
     val aiState by viewModel.aiState.collectAsState()
+    val potholeAlert by viewModel.potholeAlert.collectAsState()
 
     Column(
         modifier = Modifier
@@ -84,14 +85,16 @@ fun IntelligenceScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Anomaly Detection Card
+        // Anomaly Detection Card - driven by live potholeAlert event
+        val alertText = potholeAlert ?: aiState.anomalyDetected
+        val isAlert = potholeAlert != null || aiState.anomalyDetected != "None"
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(4.dp, shape = RoundedCornerShape(16.dp)),
             shape = RoundedCornerShape(16.dp),
             color = AutomotiveCardBg,
-            border = androidx.compose.foundation.BorderStroke(1.dp, if (aiState.anomalyDetected != "None") WarningAmber else AutomotiveCardBorder)
+            border = androidx.compose.foundation.BorderStroke(1.dp, if (isAlert) WarningAmber else AutomotiveCardBorder)
         ) {
             Row(
                 modifier = Modifier.padding(14.dp),
@@ -101,7 +104,7 @@ fun IntelligenceScreen(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = "ANOMALY DETECTION", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
-                    Text(text = aiState.anomalyDetected, color = TextPrimary, fontWeight = FontWeight.Black, fontSize = 15.sp)
+                    Text(text = alertText, color = TextPrimary, fontWeight = FontWeight.Black, fontSize = 15.sp)
                 }
                 Button(
                     onClick = { viewModel.simulatePothole() },
@@ -117,7 +120,7 @@ fun IntelligenceScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // On-Device Model Information Card
+        // On-Device Model Information Card (Integrating ONNX Runtime details)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -131,17 +134,17 @@ fun IntelligenceScreen(
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(text = "Model Architecture", color = TextSecondary, fontSize = 12.sp)
-                    Text(text = "CNN-LSTM Speed Net", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(text = aiState.modelVersion, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(text = "Inference Engine", color = TextSecondary, fontSize = 12.sp)
-                    Text(text = "TensorFlow Lite (NNAPI)", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(text = "ONNX Runtime", color = if (aiState.isModelLoaded) SuccessGreen else ErrorRed, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(text = "Execution Target", color = TextSecondary, fontSize = 12.sp)
-                    Text(text = "On-Device NPU / GPU", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(text = if (aiState.isModelLoaded) "On-Device NPU / CPU" else "Unavailable", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

@@ -25,7 +25,6 @@ fun SettingsScreen(
     var voiceGuidance by remember { mutableStateOf(true) }
     var autoRecenter by remember { mutableStateOf(true) }
     var mapMatching by remember { mutableStateOf(true) }
-    var demoMode by remember { mutableStateOf(true) }
 
     Column(
         modifier = Modifier
@@ -39,7 +38,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(text = "SETTINGS & SYSTEM CONFIG", color = PrimaryBlue, fontWeight = FontWeight.Black, fontSize = 18.sp, letterSpacing = 1.sp)
-                Text(text = "Preferences, Technical Diagnostics & Demo Configuration", color = TextSecondary, fontSize = 12.sp)
+                Text(text = "Navigation preferences and live system diagnostics", color = TextSecondary, fontSize = 12.sp)
             }
         }
 
@@ -79,10 +78,8 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(8.dp))
         SettingSwitchRow(title = "Vector Map Matching", subtitle = "Constrain DR positions onto road network", checked = mapMatching, onCheckedChange = { mapMatching = it })
         Spacer(modifier = Modifier.height(6.dp))
-        SettingSwitchRow(title = "SIH Demo Mode", subtitle = "Enable floating demo control panel", checked = demoMode, onCheckedChange = { demoMode = it })
-
         Spacer(modifier = Modifier.height(20.dp))
-        Text(text = "IDR System Version 2.0-SIH • Build 2026.08", color = TextSecondary, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
+        Text(text = "V8 inertial model runs locally during GNSS outages.", color = TextSecondary, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
     }
 }
 

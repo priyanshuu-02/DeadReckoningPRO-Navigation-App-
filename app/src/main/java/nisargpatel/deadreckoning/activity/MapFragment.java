@@ -471,6 +471,8 @@ public class MapFragment extends Fragment implements SensorEventListener {
         rotationGestureOverlay.setEnabled(true);
         mapView.getOverlays().add(rotationGestureOverlay);
         
+        nisargpatel.deadreckoning.util.IndiaBoundaryOverlayHelper.applyOfficialBoundary(requireContext(), mapView);
+        
         IMapController mapController = mapView.getController();
         mapController.setZoom(18.0);
         
