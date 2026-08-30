@@ -18,6 +18,7 @@ import nisargpatel.deadreckoning.domain.model.NavigationMode
 import nisargpatel.deadreckoning.ui.components.*
 import nisargpatel.deadreckoning.ui.theme.*
 import nisargpatel.deadreckoning.ui.viewmodel.NavigationViewModel
+import nisargpatel.deadreckoning.util.BhuvanTileSource
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -45,6 +46,7 @@ fun LiveNavigationScreen(
                     val rotationOverlay = RotationGestureOverlay(context, this)
                     rotationOverlay.isEnabled = true
                     overlays.add(rotationOverlay)
+                    nisargpatel.deadreckoning.util.IndiaBoundaryOverlayHelper.applyOfficialBoundary(context, this)
                     controller.setZoom(18.0)
                     controller.setCenter(GeoPoint(16.5062, 80.6480))
                 }

@@ -299,7 +299,7 @@ class MockNavigationRepository(
             GeoPoint(16.5080, 80.6500)
         ),
         isMapAvailable = true,
-        currentMapName = "OSMDroid Standard (Vector)"
+        currentMapName = "ISRO Bhuvan Standard 2D (SOI Boundary)"
     )
 
     private fun createInitialMapMatchingState() = MapMatchingState(
