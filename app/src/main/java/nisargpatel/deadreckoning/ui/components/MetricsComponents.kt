@@ -3,6 +3,7 @@ package nisargpatel.deadreckoning.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CompassCalibration
@@ -12,6 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -25,13 +28,13 @@ fun SpeedIndicator(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.shadow(6.dp, shape = RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
         color = AutomotiveCardBg,
-        border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryBlue.copy(alpha = 0.4f))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -41,17 +44,17 @@ fun SpeedIndicator(
                     tint = PrimaryBlue,
                     modifier = Modifier.size(18.dp)
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(text = "SPEED", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = "SPEED", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = String.format("%.1f", speedKmh),
                 color = TextPrimary,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black
             )
-            Text(text = "km/h", color = TextSecondary, fontSize = 11.sp)
+            Text(text = "km/h", color = PrimaryBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -62,13 +65,13 @@ fun HeadingIndicator(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.shadow(6.dp, shape = RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
         color = AutomotiveCardBg,
-        border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryBlue.copy(alpha = 0.4f))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -78,17 +81,17 @@ fun HeadingIndicator(
                     tint = PrimaryBlue,
                     modifier = Modifier.size(18.dp)
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(text = "HEADING", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = "HEADING", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = String.format("%.0f°", headingDegrees),
                 color = TextPrimary,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black
             )
-            Text(text = "Degrees", color = TextSecondary, fontSize = 11.sp)
+            Text(text = "Degrees", color = PrimaryBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -103,23 +106,23 @@ fun MetricCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
+        modifier = modifier.shadow(4.dp, shape = RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
         color = AutomotiveCardBg,
         border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (icon != null) {
                     Icon(imageVector = icon, contentDescription = title, tint = PrimaryBlue, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                 }
-                Text(text = title.uppercase(), color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = title.uppercase(), color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
             }
             Spacer(modifier = Modifier.height(6.dp))
-            Text(text = value, color = valueColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(text = value, color = valueColor, fontSize = 22.sp, fontWeight = FontWeight.Black)
             if (subtitle != null) {
-                Text(text = subtitle, color = TextSecondary, fontSize = 11.sp)
+                Text(text = subtitle, color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
@@ -133,44 +136,47 @@ fun AIStatusCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(8.dp, shape = RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
         color = AutomotiveCardBg,
-        border = androidx.compose.foundation.BorderStroke(1.dp, PurpleAI.copy(alpha = 0.5f))
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, PurpleAI.copy(alpha = 0.6f))
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.Default.Psychology, contentDescription = "AI", tint = PurpleAI)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "ON-DEVICE AI INTELLIGENCE", color = PurpleAI, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Icon(imageVector = Icons.Default.Psychology, contentDescription = "AI", tint = PurpleAI, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "ON-DEVICE AI ENGINE", color = PurpleAI, fontWeight = FontWeight.Black, fontSize = 14.sp, letterSpacing = 0.5.sp)
                 }
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = PurpleAI.copy(alpha = 0.2f)
+                    shape = CircleShape,
+                    color = PurpleAI.copy(alpha = 0.2f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PurpleAI)
                 ) {
                     Text(
                         text = "${inferenceTimeMs}ms latency",
                         color = PurpleAI,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text(text = "AI Predicted Speed", color = TextSecondary, fontSize = 11.sp)
-                    Text(text = String.format("%.1f km/h", predictedSpeedKmh), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(text = "AI Predicted Speed", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                    Text(text = String.format("%.1f km/h", predictedSpeedKmh), color = TextPrimary, fontWeight = FontWeight.Black, fontSize = 18.sp)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(text = "Motion Classification", color = TextSecondary, fontSize = 11.sp)
-                    Text(text = motionClassification, color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(text = "Motion Classification", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                    Text(text = motionClassification, color = SuccessGreen, fontWeight = FontWeight.Black, fontSize = 16.sp)
                 }
             }
         }

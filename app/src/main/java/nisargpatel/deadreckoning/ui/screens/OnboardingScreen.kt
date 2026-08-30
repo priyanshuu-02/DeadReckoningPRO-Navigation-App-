@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GpsOff
@@ -16,12 +17,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
 import nisargpatel.deadreckoning.ui.theme.*
 
@@ -75,7 +77,7 @@ fun OnboardingScreen(
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = onOnboardingFinished) {
-                Text(text = "SKIP", color = TextSecondary, fontWeight = FontWeight.Bold)
+                Text(text = "SKIP", color = TextSecondary, fontWeight = FontWeight.Black)
             }
         }
 
@@ -93,15 +95,17 @@ fun OnboardingScreen(
                 Surface(
                     shape = RoundedCornerShape(32.dp),
                     color = AutomotiveCardBg,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder),
-                    modifier = Modifier.size(120.dp)
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryBlue.copy(alpha = 0.5f)),
+                    modifier = Modifier
+                        .size(130.dp)
+                        .shadow(8.dp, shape = RoundedCornerShape(32.dp))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = data.icon,
                             contentDescription = data.title,
                             tint = PrimaryBlue,
-                            modifier = Modifier.size(56.dp)
+                            modifier = Modifier.size(60.dp)
                         )
                     }
                 }
@@ -109,8 +113,8 @@ fun OnboardingScreen(
                 Text(
                     text = data.title,
                     color = TextPrimary,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Black,
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -119,7 +123,8 @@ fun OnboardingScreen(
                     color = TextSecondary,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
-                    lineHeight = 20.sp
+                    lineHeight = 22.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
@@ -133,10 +138,10 @@ fun OnboardingScreen(
                 val active = pagerState.currentPage == index
                 Box(
                     modifier = Modifier
-                        .size(if (active) 24.dp else 8.dp, 8.dp)
+                        .size(if (active) 28.dp else 8.dp, 8.dp)
                         .background(
                             color = if (active) PrimaryBlue else AutomotiveCardBorder,
-                            shape = RoundedCornerShape(4.dp)
+                            shape = CircleShape
                         )
                 )
             }
@@ -144,7 +149,7 @@ fun OnboardingScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Navigation Buttons
+        // Navigation Buttons - iOS Pill Buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -154,9 +159,10 @@ fun OnboardingScreen(
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
                     },
-                    shape = RoundedCornerShape(12.dp)
+                    shape = CircleShape,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
                 ) {
-                    Text(text = "BACK", color = TextPrimary)
+                    Text(text = "BACK", color = TextPrimary, fontWeight = FontWeight.Black)
                 }
             } else {
                 Spacer(modifier = Modifier.width(80.dp))
@@ -170,13 +176,14 @@ fun OnboardingScreen(
                         onOnboardingFinished()
                     }
                 },
+                modifier = Modifier.shadow(6.dp, shape = CircleShape),
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                shape = RoundedCornerShape(12.dp)
+                shape = CircleShape
             ) {
                 Text(
                     text = if (pagerState.currentPage == pages.size - 1) "GET STARTED" else "NEXT",
                     color = Color.Black,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Black
                 )
             }
         }

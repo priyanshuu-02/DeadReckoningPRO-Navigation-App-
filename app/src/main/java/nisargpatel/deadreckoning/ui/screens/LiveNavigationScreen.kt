@@ -2,6 +2,7 @@ package nisargpatel.deadreckoning.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -9,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -101,64 +103,68 @@ fun LiveNavigationScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Main Automotive Bottom HUD Card
+            // Main Automotive Bottom HUD Card - Glassmorphism & Shadow
             Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = AutomotiveDarkBg.copy(alpha = 0.92f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(12.dp, shape = RoundedCornerShape(24.dp)),
+                shape = RoundedCornerShape(24.dp),
+                color = AutomotiveDarkBg.copy(alpha = 0.94f),
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryBlue.copy(alpha = 0.5f))
             ) {
                 Row(
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(text = "SPEED", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "SPEED", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
                         Text(
                             text = String.format("%.1f km/h", navState.speedKmh),
                             color = TextPrimary,
                             fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Black
                         )
                     }
 
                     Column {
-                        Text(text = "HEADING", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "HEADING", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
                         Text(
                             text = String.format("%.0f°", navState.headingDegrees),
                             color = PrimaryBlue,
                             fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Black
                         )
                     }
 
                     Column {
-                        Text(text = "ACCURACY", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "ACCURACY", color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
                         Text(
                             text = "${navState.accuracyMeters} m",
                             color = if (navState.accuracyMeters < 5) SuccessGreen else WarningAmber,
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Black
                         )
                     }
 
-                    // Start/Stop Navigation Button
+                    // Start/Stop Navigation iOS Pill Button
                     IconButton(
                         onClick = {
                             if (navState.isNavigating) viewModel.stopNavigation() else viewModel.startNavigation()
                         },
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(48.dp)
+                            .shadow(6.dp, shape = CircleShape)
                             .background(
                                 color = if (navState.isNavigating) ErrorRed else SuccessGreen,
-                                shape = RoundedCornerShape(22.dp)
+                                shape = CircleShape
                             )
                     ) {
                         Icon(
                             imageVector = if (navState.isNavigating) Icons.Default.Stop else Icons.Default.PlayArrow,
                             contentDescription = "Toggle Nav",
-                            tint = Color.Black
+                            tint = Color.Black,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }

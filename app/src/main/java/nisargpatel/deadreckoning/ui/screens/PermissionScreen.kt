@@ -2,6 +2,7 @@ package nisargpatel.deadreckoning.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -12,6 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,14 +35,15 @@ fun PermissionScreen(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(modifier = Modifier.height(20.dp))
-            Text(text = "SYSTEM PERMISSIONS", color = PrimaryBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Required Access Setup", color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(text = "SYSTEM PERMISSIONS", color = PrimaryBlue, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = "Required Access Setup", color = TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.Black)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "IDR requires Location, IMU Sensors, and Notification permissions for continuous vehicle navigation.",
                 color = TextSecondary,
-                fontSize = 13.sp
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -50,7 +54,7 @@ fun PermissionScreen(
                 icon = Icons.Default.LocationOn,
                 isGranted = true
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             PermissionCard(
                 title = "SENSORS (IMU)",
@@ -58,7 +62,7 @@ fun PermissionScreen(
                 icon = Icons.Default.Sensors,
                 isGranted = true
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             PermissionCard(
                 title = "NOTIFICATIONS",
@@ -70,11 +74,14 @@ fun PermissionScreen(
 
         Button(
             onClick = onContinue,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .shadow(8.dp, shape = CircleShape),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-            shape = RoundedCornerShape(12.dp)
+            shape = CircleShape
         ) {
-            Text(text = "CONTINUE TO DASHBOARD", color = androidx.compose.ui.graphics.Color.Black, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text(text = "CONTINUE TO DASHBOARD", color = Color.Black, fontWeight = FontWeight.Black, fontSize = 15.sp, letterSpacing = 0.5.sp)
         }
     }
 }
@@ -87,26 +94,28 @@ private fun PermissionCard(
     isGranted: Boolean
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(4.dp, shape = RoundedCornerShape(18.dp)),
+        shape = RoundedCornerShape(18.dp),
         color = AutomotiveCardBg,
         border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
     ) {
         Row(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(imageVector = icon, contentDescription = title, tint = PrimaryBlue, modifier = Modifier.size(28.dp))
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(text = subtitle, color = TextSecondary, fontSize = 12.sp)
+                Text(text = title, color = TextPrimary, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                Text(text = subtitle, color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
             if (isGranted) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Granted", tint = SuccessGreen, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "✓ Granted", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text(text = "✓ Granted", color = SuccessGreen, fontWeight = FontWeight.Black, fontSize = 12.sp)
                 }
             }
         }

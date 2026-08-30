@@ -3,6 +3,7 @@ package nisargpatel.deadreckoning.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,8 +11,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,19 +30,19 @@ fun ModeIndicator(
         NavigationMode.GNSS_INS -> Triple(SuccessGreen, Icons.Default.GpsFixed, "GNSS + INS")
         NavigationMode.AI_DEAD_RECKONING -> Triple(WarningAmber, Icons.Default.Psychology, "AI DEAD RECKONING")
         NavigationMode.GNSS_RECOVERY -> Triple(PrimaryBlue, Icons.Default.Sync, "GNSS RECOVERY")
-        NavigationMode.OFFLINE -> Triple(Color.LightGray, Icons.Default.SignalCellularOff, "OFFLINE NAV")
+        NavigationMode.OFFLINE -> Triple(Color(0xFFCBD5E1), Icons.Default.SignalCellularOff, "OFFLINE NAV")
         NavigationMode.CALIBRATION -> Triple(PurpleAI, Icons.Default.Tune, "CALIBRATION")
         NavigationMode.ERROR -> Triple(ErrorRed, Icons.Default.Warning, "SYSTEM ERROR")
     }
 
     Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        color = color.copy(alpha = 0.2f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color)
+        modifier = modifier.shadow(4.dp, shape = CircleShape),
+        shape = CircleShape,
+        color = color.copy(alpha = 0.15f),
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, color)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -52,8 +55,9 @@ fun ModeIndicator(
             Text(
                 text = text,
                 color = color,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.sp
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 13.sp,
+                letterSpacing = 0.5.sp
             )
         }
     }
@@ -64,26 +68,27 @@ fun DemoModeIndicator(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = WarningAmber.copy(alpha = 0.15f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, WarningAmber.copy(alpha = 0.5f))
+        modifier = modifier.shadow(2.dp, shape = CircleShape),
+        shape = CircleShape,
+        color = WarningAmber.copy(alpha = 0.18f),
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, WarningAmber)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
                     .size(8.dp)
-                    .background(WarningAmber, shape = RoundedCornerShape(4.dp))
+                    .background(WarningAmber, shape = CircleShape)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = "DEMO MODE",
                 color = WarningAmber,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                letterSpacing = 0.5.sp
             )
         }
     }
@@ -95,33 +100,50 @@ fun OutageBanner(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = ErrorRed.copy(alpha = 0.9f)
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(8.dp, shape = RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Unspecified,
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, ErrorRed)
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            ErrorRed.copy(alpha = 0.95f),
+                            Color(0xFF991B1B)
+                        )
+                    )
+                )
+                .padding(14.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.GpsOff,
-                contentDescription = "Outage Warning",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "⚠ GNSS SIGNAL LOST",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.GpsOff,
+                    contentDescription = "Outage Warning",
+                    tint = Color.White,
+                    modifier = Modifier.size(26.dp)
                 )
-                Text(
-                    text = "AI Dead Reckoning Active • Outage: ${outageSeconds}s",
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 13.sp
-                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "⚠ GNSS SIGNAL LOST",
+                        color = Color.White,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 15.sp,
+                        letterSpacing = 0.5.sp
+                    )
+                    Text(
+                        text = "AI Dead Reckoning Active • Outage Duration: ${outageSeconds}s",
+                        color = Color.White.copy(alpha = 0.95f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
@@ -148,17 +170,18 @@ fun ConfidenceIndicator(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = "$label: ", color = TextSecondary, fontSize = 12.sp)
+        Text(text = "$label: ", color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
         Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = color.copy(alpha = 0.2f)
+            shape = CircleShape,
+            color = color.copy(alpha = 0.2f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, color)
         ) {
             Text(
                 text = "$levelText ($percentage%)",
                 color = color,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.ExtraBold,
                 fontSize = 12.sp,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
             )
         }
     }
@@ -181,15 +204,16 @@ fun HealthIndicator(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = label, color = TextSecondary, fontSize = 13.sp)
-            Text(text = "$healthPercentage%", color = color, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text(text = label, color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text(text = "$healthPercentage%", color = color, fontWeight = FontWeight.Black, fontSize = 13.sp)
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         LinearProgressIndicator(
             progress = { healthPercentage / 100f },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(6.dp),
+                .height(8.dp)
+                .clip(CircleShape),
             color = color,
             trackColor = AutomotiveCardBorder
         )
