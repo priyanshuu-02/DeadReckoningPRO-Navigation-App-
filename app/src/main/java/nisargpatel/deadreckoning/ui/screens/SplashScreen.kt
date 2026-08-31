@@ -47,7 +47,7 @@ fun SplashScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "IDR",
+                text = "MARK-V",
                 color = PrimaryBlue,
                 fontSize = 52.sp,
                 fontWeight = FontWeight.Black,
@@ -62,7 +62,7 @@ fun SplashScreen(
                 letterSpacing = 2.sp
             )
             Text(
-                text = "AI-Powered Seamless Vehicle Navigation",
+                text = "Developed by MARK-V",
                 color = TextSecondary,
                 fontSize = 13.sp
             )
@@ -103,7 +103,7 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
             Text(
-                text = "GNSS + IMU + AI → Continuous Navigation",
+                text = "GNSS + IMU + MARK-V → Continuous Navigation",
                 color = PurpleAI,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold

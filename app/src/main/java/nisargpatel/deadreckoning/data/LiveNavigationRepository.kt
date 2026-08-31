@@ -29,6 +29,7 @@ import nisargpatel.deadreckoning.domain.state.NavigationState
 import nisargpatel.deadreckoning.domain.state.SensorState
 import nisargpatel.deadreckoning.domain.state.NavigationSession
 import nisargpatel.deadreckoning.domain.state.SessionState
+import nisargpatel.deadreckoning.domain.state.TrajectoryPoint
 import nisargpatel.deadreckoning.ml.V8DeadReckoningEngine
 import nisargpatel.deadreckoning.ml.V8Prediction
 import nisargpatel.deadreckoning.fusion.VehicleAlignmentCalibrator
@@ -64,7 +65,7 @@ class LiveNavigationRepository(
     override val sensorState: StateFlow<SensorState> = _sensorState.asStateFlow()
     private val _gnssState = MutableStateFlow(GNSSState())
     override val gnssState: StateFlow<GNSSState> = _gnssState.asStateFlow()
-    private val _aiState = MutableStateFlow(AIState(isModelLoaded = model != null, modelVersion = model?.manifest?.deployment_status ?: "Unavailable"))
+    private val _aiState = MutableStateFlow(AIState(isModelLoaded = model != null, modelVersion = model?.manifest?.model ?: "Unavailable"))
     override val aiState: StateFlow<AIState> = _aiState.asStateFlow()
     private val _mapState = MutableStateFlow(MapState())
     override val mapState: StateFlow<MapState> = _mapState.asStateFlow()
@@ -133,6 +134,15 @@ class LiveNavigationRepository(
             speedErrorSamples = 0
             lastRecoveryDurationSeconds = 0.0
             _analyticsState.value = AnalyticsState()
+            // A trip starts with a fresh observed path; keep the selected blue route.
+            _mapState.value = _mapState.value.copy(
+                currentPosition = null,
+                rawDRPosition = null,
+                matchedPosition = null,
+                gnssTrajectory = emptyList(),
+                drTrajectory = emptyList(),
+                matchedTrajectory = emptyList()
+            )
         }
         _navigationState.value = _navigationState.value.copy(isNavigating = true)
         _navigationEvents.tryEmit(NavigationEvent.NavigationStarted)
@@ -207,7 +217,7 @@ class LiveNavigationRepository(
         )
         _mapState.value = _mapState.value.copy(
             currentPosition = fused.position,
-            gnssTrajectory = (_mapState.value.gnssTrajectory + fused.position).takeLast(200)
+            gnssTrajectory = (_mapState.value.gnssTrajectory + fused.position).takeLast(2_000)
         )
         updateAnalytics()
     }
@@ -266,6 +276,13 @@ class LiveNavigationRepository(
         if (!fusion.isInitialized() && (previous.latitude != 0.0 || previous.longitude != 0.0)) {
             fusion.reset(GeoPoint(previous.latitude, previous.longitude), previous.speedKmh / 3.6, previous.headingDegrees, previous.accuracyMeters)
         }
+        // Start each red segment at the last trusted GNSS coordinate, making the
+        // GNSS -> DR handover visible and continuous on the map.
+        if (outageStartedAtMs == 0L && fusion.isInitialized()) {
+            _mapState.value = _mapState.value.copy(
+                drTrajectory = (_mapState.value.drTrajectory + fusion.state().position).takeLast(2_000)
+            )
+        }
         val fused = fusion.predict(
             forwardMeters = prediction.forwardMeters.toDouble(),
             lateralMeters = prediction.lateralMeters.toDouble(),
@@ -291,7 +308,7 @@ class LiveNavigationRepository(
         _mapState.value = _mapState.value.copy(
             currentPosition = fused.position,
             rawDRPosition = fused.position,
-            drTrajectory = (_mapState.value.drTrajectory + fused.position).takeLast(200)
+            drTrajectory = (_mapState.value.drTrajectory + fused.position).takeLast(2_000)
         )
         val match = applyRouteMatch(fused.position, isDeadReckoning = true)
         if (match != null) {
@@ -371,7 +388,10 @@ class LiveNavigationRepository(
             drDurationSeconds = totalOutageMs / 1_000L,
             maxErrorMeters = maxDriftMeters,
             avgErrorMeters = if (driftSamples == 0) 0.0 else accumulatedDriftMeters / driftSamples,
-            status = "Completed"
+            status = "Completed",
+            plannedRoute = _mapState.value.routePoints.map { TrajectoryPoint(it.latitude, it.longitude) },
+            gnssPath = _mapState.value.gnssTrajectory.map { TrajectoryPoint(it.latitude, it.longitude) },
+            deadReckoningPath = _mapState.value.drTrajectory.map { TrajectoryPoint(it.latitude, it.longitude) }
         )
         _sessionState.value = SessionState(sessions = (listOf(session) + _sessionState.value.sessions).take(25))
         historyStore.save(_sessionState.value.sessions)

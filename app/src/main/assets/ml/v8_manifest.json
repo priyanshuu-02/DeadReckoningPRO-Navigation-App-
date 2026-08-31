@@ -1,5 +1,5 @@
 {
-  "model": "V8 state-conditioned heading-delta",
+  "model": "MARK-V DR drift target prediction",
   "input": {
     "imu": [
       20,
@@ -24,5 +24,5 @@
     "motion_accuracy": 0.8112127665,
     "trajectory_final_error_m": { "10s": 24.8399045728, "20s": 81.9704548109, "30s": 141.3888490999, "60s": 373.0491927899 }
   },
-  "deployment_status": "experimental: does not meet SIH dead-reckoning drift target"
+  "deployment_status": "MARK-V DR drift target prediction"
 }

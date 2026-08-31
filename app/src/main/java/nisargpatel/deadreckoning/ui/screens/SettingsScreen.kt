@@ -46,7 +46,7 @@ fun SettingsScreen(
         SectionLabel("Dead reckoning")
         SettingSwitchRow(title = "Vector Map Matching", subtitle = "Constrain DR positions onto road network", checked = mapMatching, onCheckedChange = { mapMatching = it })
         CommandPanel(color = RoadInk, borderColor = DividerSoft) {
-            DataRow("Outage model", "V8 on-device", PurpleAI)
+            DataRow("Outage model", "MARK-V DR drift target prediction", PurpleAI)
             DataRow("Primary fusion", "EKF + road matching", SuccessGreen)
             DataRow("Offline mode", "Cached tiles + imported OSM graph", PrimaryBlue)
         }

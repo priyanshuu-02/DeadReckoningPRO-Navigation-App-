@@ -38,6 +38,7 @@ fun LiveNavigationScreen(
 ) {
     val navState by viewModel.navigationState.collectAsState()
     val routeInfo by viewModel.selectedRoute.collectAsState()
+    val mapState by viewModel.mapState.collectAsState()
     var potholeAlert by remember { mutableStateOf<String?>(null) }
 
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
@@ -134,21 +135,22 @@ fun LiveNavigationScreen(
             update = { mapView ->
                 mapViewRef = mapView
 
-                // Remove any old displacement track lines if present
-                val oldTrackLines = mapView.overlays.filterIsInstance<Polyline>().filter { it.id == "uber_actual_track" }
-                if (oldTrackLines.isNotEmpty()) {
-                    mapView.overlays.removeAll(oldTrackLines)
+                fun updateTrack(id: String, points: List<GeoPoint>, color: Int, width: Float) {
+                    val line = mapView.overlays.filterIsInstance<Polyline>().firstOrNull { it.id == id }
+                        ?: Polyline().also { created ->
+                            created.id = id
+                            mapView.overlays.add(created)
+                        }
+                    line.outlinePaint.color = color
+                    line.outlinePaint.strokeWidth = width
+                    line.setPoints(points)
                 }
 
-                // 1A. Draw / Update Mint Green OSRM Target Street Route Polyline
-                val existingTargetLine = mapView.overlays.filterIsInstance<Polyline>().firstOrNull { it.id == "uber_target_route" }
-                val targetPolyline = existingTargetLine ?: Polyline().also { line ->
-                    line.id = "uber_target_route"
-                    line.outlinePaint.color = AndroidColor.parseColor("#10B981")
-                    line.outlinePaint.strokeWidth = 12.0f
-                    mapView.overlays.add(line)
-                }
-                targetPolyline.setPoints(routeInfo.routePoints)
+                // Planned route is blue; observed GNSS is green; inertial DR is red.
+                // Add the route first so the measured path remains readable above it.
+                updateTrack("idr_planned_route", mapState.routePoints.ifEmpty { routeInfo.routePoints }, AndroidColor.parseColor("#2563EB"), 10f)
+                updateTrack("idr_gnss_track", mapState.gnssTrajectory, AndroidColor.parseColor("#22C55E"), 12f)
+                updateTrack("idr_dead_reckoning_track", mapState.drTrajectory, AndroidColor.parseColor("#EF4444"), 12f)
 
                 if (navState.latitude != 0.0 || navState.longitude != 0.0) {
                     val currentPos = GeoPoint(navState.latitude, navState.longitude)
@@ -193,7 +195,8 @@ fun LiveNavigationScreen(
                 onDestinationSelected = { name, point ->
                     Log.i(TAG, "User selected destination: $name ($point)")
                     viewModel.selectDestination(name, point)
-                }
+                },
+                onSearch = viewModel::searchDestinations
             )
 
             potholeAlert?.let { alert ->

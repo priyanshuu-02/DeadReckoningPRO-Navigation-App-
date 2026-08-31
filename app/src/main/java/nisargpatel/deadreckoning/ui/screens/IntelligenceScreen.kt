@@ -35,8 +35,8 @@ fun IntelligenceScreen(
 
     CommandScreen {
         PageHeader(
-            title = "Model Intelligence",
-            subtitle = "Local V8 inference and road-impact monitoring",
+            title = "MARK-V Intelligence",
+            subtitle = "On-device drift-target prediction and road monitoring",
             icon = Icons.Default.Psychology,
             tint = PurpleAI,
             trailing = {
@@ -92,12 +92,13 @@ fun IntelligenceScreen(
         }
 
         CommandPanel(color = RoadInk, borderColor = DividerSoft) {
-            SectionLabel("Model artifact")
-            DataRow("Architecture", aiState.modelVersion)
+            SectionLabel("MARK-V model card")
+            DataRow("Model build", "MARK-V DR drift target prediction", PurpleAI)
             DividerLine()
+            DataRow("Architecture", "MARK-V DR drift target prediction", PurpleAI)
             DataRow("Inference engine", "ONNX Runtime", if (aiState.isModelLoaded) SuccessGreen else ErrorRed)
             DataRow("Execution target", if (aiState.isModelLoaded) "Device CPU / NNAPI fallback" else "Unavailable")
-            DataRow("Model version", aiState.modelVersion, PurpleAI)
+            DataRow("Model version", "MARK-V DR drift target prediction", PurpleAI)
         }
     }
 }

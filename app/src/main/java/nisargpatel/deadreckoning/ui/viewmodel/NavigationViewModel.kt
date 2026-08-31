@@ -8,10 +8,13 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import nisargpatel.deadreckoning.domain.model.RouteInfo
 import nisargpatel.deadreckoning.domain.repository.NavigationRepository
 import nisargpatel.deadreckoning.domain.state.*
 import nisargpatel.deadreckoning.util.OSRMRouteFetcher
+import nisargpatel.deadreckoning.util.NominatimPlaceSearch
+import nisargpatel.deadreckoning.util.PlaceSearchResult
 import org.osmdroid.util.GeoPoint
 
 class NavigationViewModel(
@@ -32,6 +35,10 @@ class NavigationViewModel(
     fun startNavigation() = repository.startNavigation()
     fun stopNavigation() = repository.stopNavigation()
     fun startGnssMonitoring() = repository.startGnssMonitoring()
+
+    suspend fun searchDestinations(query: String): List<PlaceSearchResult> = withContext(Dispatchers.IO) {
+        NominatimPlaceSearch.search(query)
+    }
 
     fun selectDestination(name: String, destinationPoint: GeoPoint) {
         viewModelScope.launch(Dispatchers.IO) {

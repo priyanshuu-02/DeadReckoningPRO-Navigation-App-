@@ -64,7 +64,7 @@ fun HomeScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = "Plan route", color = TextPrimary, fontWeight = FontWeight.Black, fontSize = 17.sp)
                     Text(
-                        text = if (navState.latitude == 0.0 && navState.longitude == 0.0) "Tap to enter destination coordinates" else String.format("Current %.4f, %.4f", navState.latitude, navState.longitude),
+                        text = if (navState.latitude == 0.0 && navState.longitude == 0.0) "Search a place, landmark, or address" else String.format("Current %.4f, %.4f", navState.latitude, navState.longitude),
                         color = TextSecondary,
                         fontSize = 12.sp
                     )
@@ -78,7 +78,7 @@ fun HomeScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatusPill(text = if (gnssState.isAvailable) "GNSS fix" else "GNSS waiting", color = if (gnssState.isAvailable) SuccessGreen else WarningAmber)
                 StatusPill(text = if (sensorState.isAccelAvailable && sensorState.isGyroAvailable) "IMU live" else "IMU unavailable", color = if (sensorState.isAccelAvailable && sensorState.isGyroAvailable) SuccessGreen else ErrorRed)
-                StatusPill(text = if (aiState.isModelLoaded) "V8 loaded" else "V8 offline", color = if (aiState.isModelLoaded) PurpleAI else ErrorRed)
+                StatusPill(text = if (aiState.isModelLoaded) "MARK-V loaded" else "MARK-V offline", color = if (aiState.isModelLoaded) PurpleAI else ErrorRed)
             }
             DividerLine()
             DataRow(

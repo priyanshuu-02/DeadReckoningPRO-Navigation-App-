@@ -13,6 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -90,7 +94,7 @@ fun SessionDetailScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Session Trajectory Preview Placeholder Card
+        // The exact trip paths are stored at stop time and remain available here.
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -99,10 +103,7 @@ fun SessionDetailScreen(
             color = AutomotiveCardBg,
             border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(imageVector = Icons.Default.Map, contentDescription = "Session Map", tint = PrimaryBlue.copy(alpha = 0.3f), modifier = Modifier.size(56.dp))
-                Text(text = "Trip trajectory preview", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            }
+            StoredTrajectoryPreview(session)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -143,5 +144,43 @@ fun SessionDetailScreen(
                 Text(text = "Export CSV", fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
         }
+    }
+}
+
+@Composable
+private fun StoredTrajectoryPreview(session: NavigationSession) {
+    val allPoints = session.plannedRoute + session.gnssPath + session.deadReckoningPath
+    if (allPoints.size < 2) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(imageVector = Icons.Default.Map, contentDescription = "Session map", tint = PrimaryBlue.copy(alpha = 0.3f), modifier = Modifier.size(44.dp))
+                Spacer(Modifier.height(6.dp))
+                Text("No path points recorded for this trip.", color = TextSecondary, fontSize = 12.sp)
+            }
+        }
+        return
+    }
+    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+        val minLat = allPoints.minOf { it.latitude }
+        val maxLat = allPoints.maxOf { it.latitude }
+        val minLon = allPoints.minOf { it.longitude }
+        val maxLon = allPoints.maxOf { it.longitude }
+        fun pointFor(latitude: Double, longitude: Double): Offset = Offset(
+            if (maxLon == minLon) size.width / 2f else ((longitude - minLon) / (maxLon - minLon) * size.width).toFloat(),
+            if (maxLat == minLat) size.height / 2f else (size.height - (latitude - minLat) / (maxLat - minLat) * size.height).toFloat()
+        )
+        fun drawPathFor(points: List<nisargpatel.deadreckoning.domain.state.TrajectoryPoint>, color: Color, width: Float) {
+            if (points.size < 2) return
+            val path = Path().apply {
+                moveTo(pointFor(points.first().latitude, points.first().longitude).x, pointFor(points.first().latitude, points.first().longitude).y)
+                points.drop(1).forEach { point ->
+                    pointFor(point.latitude, point.longitude).let { lineTo(it.x, it.y) }
+                }
+            }
+            drawPath(path, color, style = Stroke(width = width))
+        }
+        drawPathFor(session.plannedRoute, PrimaryBlue, 4f)
+        drawPathFor(session.gnssPath, SuccessGreen, 5f)
+        drawPathFor(session.deadReckoningPath, ErrorRed, 5f)
     }
 }

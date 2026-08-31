@@ -1,5 +1,11 @@
 package nisargpatel.deadreckoning.domain.state
 
+/** A persistence-safe geographic point used by archived trip trajectories. */
+data class TrajectoryPoint(
+    val latitude: Double,
+    val longitude: Double
+)
+
 data class NavigationSession(
     val id: String,
     val dateString: String,
@@ -9,7 +15,13 @@ data class NavigationSession(
     val drDurationSeconds: Long,
     val maxErrorMeters: Double,
     val avgErrorMeters: Double,
-    val status: String
+    val status: String,
+    /** Planned navigation route shown in blue. */
+    val plannedRoute: List<TrajectoryPoint> = emptyList(),
+    /** Positions received while GNSS was available, shown in green. */
+    val gnssPath: List<TrajectoryPoint> = emptyList(),
+    /** Continuous inertial positions during GNSS outages, shown in red. */
+    val deadReckoningPath: List<TrajectoryPoint> = emptyList()
 )
 
 data class SessionState(

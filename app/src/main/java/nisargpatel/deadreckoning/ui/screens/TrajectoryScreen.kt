@@ -28,7 +28,7 @@ fun TrajectoryScreen(
 ) {
     var showGNSS by remember { mutableStateOf(true) }
     var showDR by remember { mutableStateOf(true) }
-    var showMatched by remember { mutableStateOf(true) }
+    var showRoute by remember { mutableStateOf(true) }
     val mapState by viewModel.mapState.collectAsState()
 
     Column(
@@ -43,7 +43,7 @@ fun TrajectoryScreen(
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(text = "TRAJECTORY COMPARISON", color = PrimaryBlue, fontWeight = FontWeight.Black, fontSize = 18.sp, letterSpacing = 1.sp)
-                Text(text = "GNSS vs Raw DR vs Map-Matched Path Overlay", color = TextSecondary, fontSize = 12.sp)
+                Text(text = "Planned route vs live GNSS and dead-reckoning path", color = TextSecondary, fontSize = 12.sp)
             }
         }
 
@@ -70,8 +70,8 @@ fun TrajectoryScreen(
                     Text(text = "Raw DR Path", color = ErrorRed, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = showMatched, onCheckedChange = { showMatched = it }, colors = CheckboxDefaults.colors(checkedColor = PrimaryBlue))
-                    Text(text = "Matched", color = PrimaryBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Checkbox(checked = showRoute, onCheckedChange = { showRoute = it }, colors = CheckboxDefaults.colors(checkedColor = PrimaryBlue))
+                    Text(text = "Plan", color = PrimaryBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -87,13 +87,13 @@ fun TrajectoryScreen(
             color = AutomotiveDarkBg,
             border = androidx.compose.foundation.BorderStroke(1.dp, AutomotiveCardBorder)
         ) {
-            if (mapState.gnssTrajectory.size + mapState.drTrajectory.size + mapState.matchedTrajectory.size < 2) {
+            if (mapState.routePoints.size + mapState.gnssTrajectory.size + mapState.drTrajectory.size < 2) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Trajectory data appears after navigation begins.", color = TextSecondary, fontSize = 12.sp)
                 }
             } else {
                 Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                    val allPoints = mapState.gnssTrajectory + mapState.drTrajectory + mapState.matchedTrajectory
+                    val allPoints = mapState.routePoints + mapState.gnssTrajectory + mapState.drTrajectory
                     val minLat = allPoints.minOf { it.latitude }
                     val maxLat = allPoints.maxOf { it.latitude }
                     val minLon = allPoints.minOf { it.longitude }
@@ -111,9 +111,9 @@ fun TrajectoryScreen(
                         }
                         drawPath(path, color, style = Stroke(width = width))
                     }
+                    if (showRoute) drawTrajectory(mapState.routePoints, PrimaryBlue, 4f)
                     if (showGNSS) drawTrajectory(mapState.gnssTrajectory, SuccessGreen, 5f)
-                    if (showDR) drawTrajectory(mapState.drTrajectory, ErrorRed, 4f)
-                    if (showMatched) drawTrajectory(mapState.matchedTrajectory, PrimaryBlue, 5f)
+                    if (showDR) drawTrajectory(mapState.drTrajectory, ErrorRed, 5f)
                 }
             }
         }
@@ -129,9 +129,9 @@ fun TrajectoryScreen(
             Column(modifier = Modifier.padding(14.dp)) {
                 Text(text = "LIVE TRAJECTORY LEGEND", color = WarningAmber, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Green: received GNSS positions.", color = TextSecondary, fontSize = 11.sp)
-                Text(text = "Red: raw V8 dead-reckoning estimates.", color = TextSecondary, fontSize = 11.sp)
-                Text(text = "Blue: estimates projected onto the active route geometry.", color = TextSecondary, fontSize = 11.sp)
+                Text(text = "Blue: planned route from source to destination.", color = TextSecondary, fontSize = 11.sp)
+                Text(text = "Green: positions received while GNSS is available.", color = TextSecondary, fontSize = 11.sp)
+                Text(text = "Red: continuous dead-reckoning path during GNSS outages.", color = TextSecondary, fontSize = 11.sp)
             }
         }
     }
